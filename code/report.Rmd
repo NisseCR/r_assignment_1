@@ -13,36 +13,27 @@ output:
 bibliography: references.bib  
 ---
 
+<style>
+body {
+text-align: justify}
+</style>
+
 # Abstract
 ![](../images/bike_sharing.jpeg)  
 
 "*Bikesharing contributes to the advent of more sustainable transportation in cities around the globe.*" [@beland]. Bikesharing programs are designed to provide short-term bicycle rental in stations dispersed throughout the cities and located near public transportation hubs [@beland]. They have numerous environmental and health benefits, such as reducing congestion, complementing other forms of public transportation and encouraging exercise [@beland]. Additionally, accessible bike rental has a lower barrier of entry than purchasing your own bike and is more convenient for out-of-town commuters.  
+
 In principle bicycles pose a good substitute for car use in urban areas, however, they have certain limitations. Among them is the exposure of cyclists to weather while commuting compared to other means of transportation. It would be intuitive for the number of bike rentals to be dependent on current weather conditions. If that is the case, the extent of that relationship would be important information for the bikesharing companies. Potentially, the information could be a factor in variety if business decisions, including level of pricing or supply for bikes in different seasons.   
 
+Considering these possible applications, this report will attempt to answer: **To what extent can weather data predict the number of bike rentals in different parts of the day?** Weather data is understood in terms of temperature, wind speed, humidity and occurrence of weather phenomena (including storms, snow and rain). 
+
 ---
+# Dataset
+The dataset was retrieved from the open-source machine learning repository [UC Irvine](https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset) and Hadi Fanaee-T from the Laboratory of Artificial Intelligence and Decision Support (LIAAD), University of Porto is credited as its autheor. The bike rentals data originates from the Capital Bikeshare company based in Washington DC, United States. The dataset containes the hourly and daily counts of bike rentals and weather data in the years 2011 and 2012 in the American capital. We opted to use the hourly data due for modeling, due to the larger sample size (the dataset consists of 17379 data points) and less aggregated data. We found the smaller degree of aggregation important, as weather can change drastically throughout a 24 hour period. In case of further interest or replication of our research analysis, you can trace the link to this dataset at the end of this paper in our “References.” 
 
-Considering these possible applications, this report will attempt to answer: **To what extent can weather data predict the number of bike rentals in different parts of the day?** Weather data will includes temperature, wind speed, occurrence of weather phenomena (including storms, snow and rain), 
+# Loading data
 
-Operationalization of the RQ:  
-
-* Control variables – possibly a table with all of the variables.  
-
-* Drawing of the path model.  
-
-* Methodology.  
-
-* Data description.  
-
-To describe our data, we retrieved the hourly count of bike rentals between the years 2022 and 2012 from the machine learning repository UC Irvine. The metadata of this dataset belongs to Capital Bikeshare in Washington DC, United States. Thus, focusing on an American population with the corresponding weather and seasonal information.  
-
-
-# References
-
-<div id="refs"></div>
-
-# Load data
-
-Data set is acquired from a [machine-learning repository](https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset), which provided us with three files, namely:  
+The repository provided us with three files, namely:  
 
 * `hour.csv`, hourly data of bike rentals.
 * `day.csv`, daily data of bike rentals.
@@ -73,7 +64,7 @@ data <- source_data
 head(data)
 ```
 
-We then create a sub-selection of variables that are of interest for our model; these are the control, predictor and outcome variables + variables necessary for EDA and preprocessing.
+We then create a sub-selection of variables that are of interest for our model; these are the control, predictor and outcome variables, as well as, variables necessary for EDA and preprocessing.
 
 ```{r select}
 data <- select(data,
@@ -87,15 +78,31 @@ data <- select(data,
                cnt)
 ```
 
-TODO: perhaps describe columns, # of rows or the like. summarising dataframe?
+## Variables description  
+
+```{r var_table, echo=FALSE}
+# creating a table describing the variables used
+variables <- read.csv("../data/variables2.csv", header = TRUE, sep = ";")%>%
+  as_tibble()
+variables <- variables[1:8, 1:5]
+
+variables %>% 
+  kable()%>%
+  kable_styling()
+
+```
 
 # Preprocessing & EDA {#eda}
 
-## Data Cleaning {.tabset}
+## Creating Additional Variables {.tabset}
+We decided that including a time component in our final model is essential. Night hours are approximately half of the data and are characterized by much lower rental counts than the daylight values. Without separating the night data the predictors we expected the predicted rentals during the more active periods to be underestimated. However, we are interested in modeling rental values for the entire day. Thus, we do want to include the hours as a categorical predictor to be able to control the night and day periods. 
+
+However, 24 dummy codes is too much for substantive interpretation. Thus, we decided to aggregate the hourly data into 3 day segments night (23-6), morning-noon(7-14) and eve (15-22). The decision to divide into these categories was made by looking at the distribution of the rental counts at specific hours. We noticed a natural division into these 3 segments. Dividing the time in these periods would potentially solve the problem of interpreting dummy encodings and clusters of  low-night and high-day rentals being incorrectly estimated.
+
+This section describes the process of creating new variables that will be later used to agrregate the data into segments. The aggregation process is described in [Data Aggregation](#agg).
 
 ### Expand `dteday` data
-
-Expand `dteday` data by adding `dt_num` (numeric version of day, day_id so to speak).
+We decide to create a new variable 'dt_num' that provides a numeric value that represents to which out of the 731 days in the dataset a given hourly data point belongs. We create it by converting the `dteday` variable.
 
 ```{r expand date}
 # Converts datetime string to numeric with origin offset.
@@ -118,8 +125,7 @@ n_days <- n_distinct(data$dteday)
 ```
 
 ### Clustering of `hr` categories
-
-Create clusters for `hr`  called `hr_seg`. 24 dummy codes it too much.
+We create a new variable 'hr_seg' that gives each data point with an hour within our giver segment the name of that segment. 
 ```{r hour cut}
 # Shift the `hr` data by 2 and increment the hour 23 for easier binning via the cut function.
 data <- data %>%
@@ -136,7 +142,7 @@ data <- data %>%
   ))
 ```
 
-Check whether segmenting of `hr` is applied correctly by looking at single day data.
+After creating the categories, we check whether segmenting of `hr` was applied correctly by looking at single day data:
 
 ```{r bin check}
 # Check output for single day.
@@ -147,13 +153,9 @@ data %>%
   head(24)
 ```
 
-Segments were chosen based on `hr~cnt` data. Segments needed to be of equal size.
+The segments were chosen based on distribution of rental counts in given hours. Additionally, we wanted the segments to be of equal size to ensure all hours are equally represented in the model. Below we present one of the graphs we used to make the decision. 
 
-```{r determine segment, message=FALSE}
-# Create a `mode` function for aggregation.
-mode <- function(x) {
-    which.max(table(x))
-}
+```{r determine segment, message=FALSE, echo=FALSE}
 
 # Plot hr~cnt with current segmentation indicator.
 data %>%
@@ -162,22 +164,26 @@ data %>%
     cnt = sum(cnt)
   ) %>%
   ggplot(aes(hr, cnt, fill = hr_seg)) +
-    geom_bar(stat = "identity")
+    geom_bar(stat = "identity")+
+    labs (x = "Hour, where 0 reprenents 1 am",
+          y = "Sum of all rentals at that hour in 2011 and 2012",
+          title = "Distribution of bike rentals throughout the day")+
+  theme_bw()
 ```
 
-## Summary/stats?
+## Descriptive Statistics
 
-Summary of our data.
+We obtained the descriptive statistics of our variables. 
 
-```{r summary}
+```{r summary, echo=FALSE}
 summary(data)
 ```
 
-Data contains `r n_days` unique days, meaning that the entirety of 2011 (365 days) and 2012 (366 days) was recorded.
+The most important information we obtained here is that the data contains `r n_days` unique days, meaning that the entirety of 2011 (365 days) and 2012 (366 days) was recorded. However, we note that there is approximately 100 less "night" hours in the dataset than the other two segments suggesting there might be some missing records.  
 
 ## Distributions {#dists}
 
-Distributions of variables.
+Since the summaries are not giving a precise enough picture, we histograms of the variables.
 
 ```{r distributions, echo=FALSE, message=FALSE}
 grid.arrange(
@@ -191,9 +197,9 @@ grid.arrange(
 )
 ```
 
-Notice the following:
+The graphs reveal the following:
 
--   Missing records in some `hr` categories.
+-   The first graph confirms the missing records in some `hr` categories. We suspect that this could be caused by data cleaning of the author of the dataset, since the night hours are likely to have no rentals. Alternatively, maybe the bike rental company was not operating during those low traffic hours for reasons that could include lack of night workers or updates in the system. Lastly, we considered time changes, however, those would only impact the records of one of the hours. Nevertheless, the difference should not impact the final results of our analysis. 
 -   Occurrence gap in `windspeed` distribution.
 -   Category 4 of `weathersit` is barely present. (categorical outlier)
 
@@ -215,6 +221,7 @@ Notice the following:
 -   Large amount of outliers in `cnt` (outcome variables (due to right-skewed distr).
 -   Some outliers in `windspeed`.
 -   3x `0.00` values of `hum`.
+The 
 
 ### Rental count outliers
 Large amount of `cnt` outliers is due to low rental count during the night, which shifts the median to a lower value. `hr_seg` acts as moderator, so better to check data displays *per* `hr_seg` cluster.  
@@ -252,6 +259,11 @@ data %>%
   summarise(n = n()) %>%
   arrange(hum) %>%
   head()
+```
+
+
+```{r}
+# Code for removing the outliers that we think are here because of a mistake?
 ```
 
 ## Missing data
@@ -336,9 +348,14 @@ ggplot(data, aes(hum, cnt)) %>% plot_cnt_covar()
 
 ```
 
-## Data Aggregation
+## Data Aggregation {#agg}
 After having created `hr_seq`, we aggregate the data based on both the date (`dteday`) and the hour segments (`hr_seg`. In case of dichotomous variables, we take the `mode` of the variable, with earlier defined function.
 ```{r aggregate hour, message=FALSE}
+# Create a `mode` function for aggregation.
+mode <- function(x) {
+    which.max(table(x))
+}
+
 # Aggregate over `hr_bin` factor.
 data <- data %>%
     group_by(dteday, hr_seg) %>%
@@ -359,3 +376,8 @@ data <- data %>%
 ```{r model}
 fit <- lm(cnt ~ temp + hum, data)
 ```
+
+
+# References
+
+<div id="refs"></div>
