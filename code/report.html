@@ -3783,6 +3783,196 @@ to know about the high-leverage points.</p>
 be sufficiently met.</p>
 </div>
 </div>
+<div id="interpretation-of-key-results" class="section level1">
+<h1>Interpretation of key results</h1>
+<div id="model-statistics-and-coefficients" class="section level2">
+<h2>Model statistics and coefficients</h2>
+<p>In this section, we will check the quality of our linear model using
+the R function <code>summary()</code> for our multiple linear regression
+model and the same model including a categorical predictor variable.
+This new categorical variable is named <code>hr_seg</code> and it works
+as our moderator, counting the segments of the day in hours for the
+<code>morning-noon</code> and <code>eve</code> (standing for
+evening).</p>
+<pre class="r"><code># Regression line model:check statistics and coefficients
+summary(model2) </code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = cnt ~ temp + hum3, data = data)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2243.29  -648.88   -44.11   615.41  2540.95 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)   659.44      60.54   10.89   &lt;2e-16 ***
+## temp         2974.36     101.76   29.23   &lt;2e-16 ***
+## hum3        -2082.68      88.37  -23.57   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 898.3 on 2187 degrees of freedom
+## Multiple R-squared:  0.3957, Adjusted R-squared:  0.3951 
+## F-statistic:   716 on 2 and 2187 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p><strong>The summary outputs shows 6 components,
+including:</strong></p>
+<ul>
+<li>Call: Shows the function call to compute our regression model, which
+is: <span class="math display">\[
+lm(formula = cnt \~ (temp + hum3) \* hr_seg, data = data)
+\]</span></li>
+<li>Residuals: A quick view of the distribution of the residuals, which
+by definition have a mean zero.</li>
+<li>Coefficients: Shows the regression beta coefficients and their
+statistical significance. Predictor variables, that are significantly
+associated with the outcome variable, appear marked by stars.</li>
+<li>Residual Standard Error, R-squared, and the F-statistic check how
+well the model fits our data.</li>
+</ul>
+</div>
+<div id="partial-effects---multiple-linear-regression" class="section level2">
+<h2>Partial Effects - Multiple Linear Regression</h2>
+<div id="interpretation" class="section level3">
+<h3>Interpretation</h3>
+<p><strong>What is the effect of humidity on average rental bike, after
+controlling for temperature?</strong></p>
+<p>First, the intercept tells us the location of the dependent variable,
+when the independent variable equals 0 ($x=0). Using our regression
+model as an example, the expected <em>average</em> bike rental when
+temperature reaches <em>0°C</em> is <em>659.44</em> units.</p>
+<p>Second, the regression coefficients indicate the amount of change in
+the predicted variable when the predictor increases with one unit. In
+this regression model, this means that for every Celsius degree
+increase, <em>average</em> rental bike is expected to
+<strong>increase</strong> by <em>2974.36</em>, after controlling for
+humidity (“hum3”). Whereas, for each additional point of humidity,
+<em>average</em> bike rental is expected to <em>decrease by 2082.68
+units</em>, after controlling temperature.</p>
+</div>
+</div>
+<div id="significance-testing---p-values" class="section level2">
+<h2>Significance testing - P values</h2>
+<p>Probability values (p-values) measures the strengthen evidence of the
+null hypothesis with a fraction or decimal value between 0 and 1.
+<strong>The closer the value is toward 0, the stronger the evidence
+against the null hypothesis.</strong></p>
+<p>Viewing this in our regression model, the predictor variables results
+obtained that <em>p &lt;2.2e-16</em>. Thus, <strong>rejecting our null
+hypothesis</strong>. We conclude that there is a statistical
+significance or <strong>strong</strong> relationship of temperature and
+humidity with bike rental, due to our smaller p-values.</p>
+</div>
+</div>
+<div id="moderator-variables" class="section level1">
+<h1>Moderator variables</h1>
+<div id="categorical-predictors" class="section level2">
+<h2>Categorical predictors</h2>
+<pre class="r"><code># Introducing new categorical variable:
+# Check the coefficients and statistics results
+summary(model2_mod)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = cnt ~ (temp + hum3) * hr_seg, data = data)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2223.73  -295.17   -20.23   213.05  1943.87 
+## 
+## Coefficients:
+##                         Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                83.11      65.14   1.276    0.202    
+## temp                      587.58     126.96   4.628 3.91e-06 ***
+## hum3                      -94.16     105.55  -0.892    0.372    
+## hr_segmorning-noon        961.65      93.47  10.288  &lt; 2e-16 ***
+## hr_segeve                 548.62      95.08   5.770 9.04e-09 ***
+## temp:hr_segmorning-noon  1627.07     168.05   9.682  &lt; 2e-16 ***
+## temp:hr_segeve           3076.57     169.64  18.136  &lt; 2e-16 ***
+## hum3:hr_segmorning-noon  -848.74     151.47  -5.603 2.37e-08 ***
+## hum3:hr_segeve          -1149.92     149.00  -7.718 1.79e-14 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 574 on 2181 degrees of freedom
+## Multiple R-squared:  0.7539, Adjusted R-squared:  0.753 
+## F-statistic: 835.4 on 8 and 2181 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p><strong>Little reminder:</strong> The categorical variable
+<code>hr_seg</code> accounts for the segments of hours in the categories
+<code>morning-noon</code> and <code>eve</code>(evening).</p>
+</div>
+<div id="partial-effects---categorical-predictor-variables" class="section level2">
+<h2>Partial Effects - Categorical predictor variables</h2>
+</div>
+<div id="interpretation-1" class="section level2">
+<h2>Interpretation</h2>
+<p>In the output of our second model (“model 2 mod”), we see that the
+categorical variable <code>hr_seg</code> is added to our multiple linear
+regression model as a moderator. Therefore, testing the relationship of
+bike rental and temperature to determine its statistical
+relationship.</p>
+<p><strong>Temperature and humidity</strong></p>
+<p>Compared to the multiple linear regression model, temperature remains
+having an <strong>average positive estimation</strong> of <em>587.58
+units</em>, meanwhile, humidity showcases a <strong>negative average
+estimation</strong> of <em>94.16 units</em>.</p>
+<p><strong>Intercept and reference groups</strong></p>
+<ul>
+<li><code>hr_seg</code> represents a segment of the day in hours and
+considered the reference group in this example.</li>
+<li>Intercept represent the average bike rental for a bike rented within
+a segment of the day (<code>hr_seg</code>), assuming all resting
+variables are held constant.</li>
+</ul>
+<p><strong>Categorical coefficients</strong></p>
+<ul>
+<li><p>The <strong>average</strong> estimated value for renting a bike
+during the <strong>morning-noon segment</strong> of the day is of
+<em>961.65</em> units, <strong>higher</strong> in comparison to the
+<strong>evening segment</strong> of the day. In the evening segment of
+the day, the <strong>average</strong> estimated value for renting a bike
+is <em>548.62 units</em>.</p></li>
+<li><p>After controlling for temperature and humidity, the
+<em>average</em> estimated bike rental during the <strong>morning-noon
+segment</strong> is equal to <em>1627.07 units</em>, whereas the
+<em>average</em> estimated bike rental during the
+<strong>evening</strong> is <em>3076.57</em> units. Around
+<strong>1449.5 bike rental units increased</strong> during the evening
+compared to the morning-noon segment, after controlling for temperature
+and humidity.</p></li>
+</ul>
+</div>
+<div id="model-fit" class="section level2">
+<h2>Model Fit</h2>
+<p><strong>How much bike rental variation is explained by the two
+models?</strong></p>
+</div>
+<div id="comparison-in-statistics-and-coefficients" class="section level2">
+<h2>Comparison in statistics and coefficients</h2>
+<p>Comparing and contrasting the results in both models,
+<strong>temperature</strong> and <strong>humidity</strong> variables
+remain having <strong>consistent relationships</strong> for their
+average estimated values. <strong>As temperature increases, humidity
+decreases</strong>. Thus, cross validating our results by being
+consistent.</p>
+<p>Overall, the <strong>highest estimated value</strong> belongs to the
+evening segment of the model, introducing <code>hr_seg</code> as our
+categorical predictor variable. It indicates an <em>average</em> bike
+rental <em>increase</em> during the <strong>evening segment with 3076.57
+units</strong>, after controlling for temperature. Even <strong>higher
+than</strong> the overall coefficient values in <strong>our multiple
+linear regression model</strong>.</p>
+<p>Concerning the <strong>second model</strong> including
+<code>hr_seg</code> as the <em>predictor variable</em>, <strong>humidity
+does not necessarily have a strong statistical relationship with bike
+rental</strong>, where <em>p = 0.372</em>. Certainly, higher than its
+p-value in the regression model.</p>
+<p>Concerning the <strong>p-value for temperature</strong>, there is a
+slightly increased probability of <em>p &lt; 3.91e-06</em> in the second
+model when including the predictor variable <code>hr_seg</code>. Not
+alarming since it is consistent toward 0, thus rejecting our null
+hypothesis.</p>
+</div>
+</div>
 <div id="references" class="section level1">
 <h1>References</h1>
 <div id="refs" class="references csl-bib-body hanging-indent">

@@ -568,6 +568,150 @@ plot(dfbetas(model2_mod)[,1])               # Seems good
 
 Nowhere, Cook's distance is high at all. So this assumption seems to be sufficiently met.
 
+# Interpretation of key results
+
+## Model statistics and coefficients
+
+In this section, we will check the quality of our linear model using the
+R function `summary()` for our multiple linear regression model and the
+same model including a categorical predictor variable. This new
+categorical variable is named `hr_seg` and it works as our moderator,
+counting the segments of the day in hours for the `morning-noon` and
+`eve` (standing for evening).
+
+```{r}
+# Regression line model:check statistics and coefficients
+summary(model2) 
+```
+
+**The summary outputs shows 6 components, including:**
+
+-   Call: Shows the function call to compute our regression model, which
+    is: $$
+    lm(formula = cnt \~ (temp + hum3) \* hr_seg, data = data)
+    $$
+-   Residuals: A quick view of the distribution of the residuals, which
+    by definition have a mean zero.
+-   Coefficients: Shows the regression beta coefficients and their
+    statistical significance. Predictor variables, that are
+    significantly associated with the outcome variable, appear marked by
+    stars.
+-   Residual Standard Error, R-squared, and the F-statistic check how
+    well the model fits our data.
+
+## Partial Effects - Multiple Linear Regression
+
+### Interpretation
+
+**What is the effect of humidity on average rental bike, after
+controlling for temperature?**
+
+First, the intercept tells us the location of the dependent variable,
+when the independent variable equals 0 (\$x=0). Using our regression
+model as an example, the expected *average* bike rental when temperature
+reaches *0°C* is *659.44* units.
+
+Second, the regression coefficients indicate the amount of change in the
+predicted variable when the predictor increases with one unit. In this
+regression model, this means that for every Celsius degree increase,
+*average* rental bike is expected to **increase** by *2974.36*, after
+controlling for humidity ("hum3"). Whereas, for each additional point of
+humidity, *average* bike rental is expected to *decrease by 2082.68
+units*, after controlling temperature.
+
+## Significance testing - P values
+
+Probability values (p-values) measures the strengthen evidence of the
+null hypothesis with a fraction or decimal value between 0 and 1. **The
+closer the value is toward 0, the stronger the evidence against the null
+hypothesis.**
+
+Viewing this in our regression model, the predictor variables results
+obtained that *p \<2.2e-16*. Thus, **rejecting our null hypothesis**. We
+conclude that there is a statistical significance or **strong**
+relationship of temperature and humidity with bike rental, due to our
+smaller p-values.
+
+# Moderator variables
+
+## Categorical predictors
+
+```{r}
+# Introducing new categorical variable:
+# Check the coefficients and statistics results
+summary(model2_mod)
+```
+
+**Little reminder:** The categorical variable `hr_seg` accounts for the
+segments of hours in the categories `morning-noon` and `eve`(evening).
+
+## Partial Effects - Categorical predictor variables
+
+## Interpretation
+
+In the output of our second model ("model 2 mod"), we see that the
+categorical variable `hr_seg` is added to our multiple linear regression
+model as a moderator. Therefore, testing the relationship of bike rental
+and temperature to determine its statistical relationship.
+
+**Temperature and humidity**
+
+Compared to the multiple linear regression model, temperature remains
+having an **average positive estimation** of *587.58 units*, meanwhile,
+humidity showcases a **negative average estimation** of *94.16 units*.
+
+**Intercept and reference groups**
+
+-   `hr_seg` represents a segment of the day in hours and considered the
+    reference group in this example.
+-   Intercept represent the average bike rental for a bike rented within
+    a segment of the day (`hr_seg`), assuming all resting variables are
+    held constant.
+
+**Categorical coefficients**
+
+-   The **average** estimated value for renting a bike during the
+    **morning-noon segment** of the day is of *961.65* units, **higher**
+    in comparison to the **evening segment** of the day. In the evening
+    segment of the day, the **average** estimated value for renting a
+    bike is *548.62 units*.
+
+-   After controlling for temperature and humidity, the *average*
+    estimated bike rental during the **morning-noon segment** is equal
+    to *1627.07 units*, whereas the *average* estimated bike rental
+    during the **evening** is *3076.57* units. Around **1449.5 bike
+    rental units increased** during the evening compared to the
+    morning-noon segment, after controlling for temperature and
+    humidity.
+
+## Model Fit
+
+**How much bike rental variation is explained by the two models?**
+
+## Comparison in statistics and coefficients
+
+Comparing and contrasting the results in both models, **temperature**
+and **humidity** variables remain having **consistent relationships**
+for their average estimated values. **As temperature increases, humidity
+decreases**. Thus, cross validating our results by being consistent.
+
+Overall, the **highest estimated value** belongs to the evening segment
+of the model, introducing `hr_seg` as our categorical predictor
+variable. It indicates an *average* bike rental *increase* during the
+**evening segment with 3076.57 units**, after controlling for
+temperature. Even **higher than** the overall coefficient values in
+**our multiple linear regression model**.
+
+Concerning the **second model** including `hr_seg` as the *predictor
+variable*, **humidity does not necessarily have a strong statistical
+relationship with bike rental**, where *p = 0.372*. Certainly, higher
+than its p-value in the regression model.
+
+Concerning the **p-value for temperature**, there is a slightly
+increased probability of *p \< 3.91e-06* in the second model when
+including the predictor variable `hr_seg`. Not alarming since it is
+consistent toward 0, thus rejecting our null hypothesis.
+
 # References
 
 <div id="refs"></div>
