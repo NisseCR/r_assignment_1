@@ -174,10 +174,10 @@ data %>%
     cnt = sum(cnt)
   ) %>%
   ggplot(aes(hr, cnt, fill = hr_seg)) +
-    geom_bar(stat = "identity")+
-    labs (x = "Hour, where 0 reprenents 1 am",
-          y = "Sum of all rentals at that hour in 2011 and 2012",
-          title = "Distribution of bike rentals throughout the day")+
+    geom_bar(stat = "identity") +
+    labs (x = "Hour (0 reprenents 1 am)",
+          y = "Sum of rentals in 2011 and 2012",
+          title = "Distribution of bike rentals throughout the day") +
   theme_bw()
 ```
 
@@ -197,19 +197,19 @@ Since the summaries are not giving a precise enough picture, we histograms of th
 
 ```{r distributions, echo=FALSE, message=FALSE}
 grid.arrange(
-      ggplot(data, aes(cnt)) + geom_histogram() +labs (x = "number of bike rentals",
-          y = "frequency")+ theme_bw(),
-    ggplot(data, aes(hr)) + geom_histogram(binwidth = 1) + labs (x = "hour",
-          y = "frequency")+ theme_bw(),
-    ggplot(data, aes(weathersit)) + geom_histogram(binwidth = 1) + labs (x = "weather phenomena", y = "frequency")+ theme_bw(),
-    ggplot(data, aes(temp)) + geom_histogram() + labs (x = "temperature",
-          y = "frequency")+ theme_bw(),
-    ggplot(data, aes(atemp)) + geom_histogram() + labs (x = "feeling temperature",
-          y = "frequency")+ theme_bw(),
-    ggplot(data, aes(hum)) + geom_histogram() + labs (x = "humidity",
-          y = "frequency")+ theme_bw(),
-    ggplot(data, aes(windspeed)) + geom_histogram() + labs (x = "wind speed",
-          y = "frequency")+ theme_bw()
+    ggplot(data, aes(cnt)) + geom_histogram() + labs (x = "Number of bike rentals",
+          y = "Frequency") + theme_bw(),
+    ggplot(data, aes(hr)) + geom_histogram(binwidth = 1) + labs (x = "Hour",
+          y = "Frequency")+ theme_bw(),
+    ggplot(data, aes(weathersit)) + geom_histogram(binwidth = 1) + labs (x = "Weather phenomena", y = "Frequency") +           theme_bw(),
+    ggplot(source_data, aes(temp)) + geom_histogram() + labs (x = "Temperature",
+          y = "Frequency")+ theme_bw(),
+    ggplot(data, aes(atemp)) + geom_histogram() + labs (x = "Feeling temperature",
+          y = "Frequency")+ theme_bw(),
+    ggplot(data, aes(hum)) + geom_histogram() + labs (x = "Humidity",
+          y = "Frequency")+ theme_bw(),
+    ggplot(data, aes(windspeed)) + geom_histogram() + labs (x = "Wind speed",
+          y = "Frequency")+ theme_bw()
 )
 ```
 
@@ -223,14 +223,14 @@ The distribution of temperature and feeling temperature is quite normal. However
 
 ## Outliers {.tabset}
 
-Since there was an indication of outliers, we decided to detect them using quantiles. The following boxplots with an IQR multipler equal to 1.5 are made:  
+Since there was an indication of outliers, we decided to detect them using quantiles. We made the following box plots:
 ```{r outliers, echo=FALSE, message=FALSE}
 grid.arrange(
-    ggplot(data, aes(temp)) + geom_boxplot() + labs (x = "temperature")+ theme_bw(),
-    ggplot(data, aes(atemp)) + geom_boxplot() + labs (x = "feeling temperature")+ theme_bw(),
-    ggplot(data, aes(hum)) + geom_boxplot() + labs (x = "humidity")+ theme_bw(),
-    ggplot(data, aes(windspeed)) + geom_boxplot() + labs (x = "wind speed")+ theme_bw(),
-    ggplot(data, aes(cnt)) + geom_boxplot() + labs (x = "number of bike rentals")+ theme_bw()
+    ggplot(data, aes(temp)) + geom_boxplot() + labs (x = "Temperature") + theme_bw(),
+    ggplot(data, aes(atemp)) + geom_boxplot() + labs (x = "Feeling temperature") + theme_bw(),
+    ggplot(data, aes(hum)) + geom_boxplot() + labs (x = "Humidity") + theme_bw(),
+    ggplot(data, aes(windspeed)) + geom_boxplot() + labs (x = "Wind speed") + theme_bw(),
+    ggplot(data, aes(cnt)) + geom_boxplot() + labs (x = "Number of bike rentals") + theme_bw()
 )
 ```
 
@@ -242,13 +242,13 @@ We investigate the "problematic" variables: humidity, wind speed and number of r
 
 Since we suspect that a large amount of rentals' outliers is due to low rental count during the night, we decided to make separate histogram and boxplot graphs for the three day segments.  
 ```{r cnt histogram, echo=FALSE, message=FALSE}
-ggplot(data, aes(cnt)) + geom_histogram() + facet_wrap(vars(hr_seg))+labs (x = "number of bike rentals",  title = "Distribution of bike rentals throughout the day segments")+ theme_bw()
+ggplot(data, aes(cnt)) + geom_histogram() + facet_wrap(vars(hr_seg))+labs (x = "Number of bike rentals",  title = "Distribution of bike rentals throughout the day segments")+ theme_bw()
 ```
 
 In the histogram we see the drastically different night distribution to the other two day segments, with the frequency of small numbers of rentals dominating the entire data. However, all three distributions are quite positively-skewed even after the division  into the time segments. 
 
 ```{r cnt outliers, echo=FALSE, message=FALSE}
-ggplot(data, aes(cnt, colour = hr_seg)) + geom_boxplot()+ labs (x = "number of bike rentals",  title = "Boxplot of bike rentals, seperated by the day segments")+ theme_bw()
+ggplot(data, aes(cnt, colour = hr_seg)) + geom_boxplot()+ labs (x = "Number of bike rentals",  title = "Boxplot of bike rentals, seperated by the day segments")+ theme_bw()
 ```
 
 The right-skewed distributions throughout the segments are visible in the boxplots. That is why dividing the boxplot according to the time segments still results in outliers at the tail-end of the values. However, the outlier values are quite reasonable. It is realistic for the rental company to be far more likely to receive  smaller number of rentals and not operating at their full capacity. Hence the outliers remain in the dataset.
@@ -278,7 +278,7 @@ data %>%
   head()
 ```
 
-In fact, there is 22 hours in which the value is registered. Humidity of '0.00' is not possible in nature, which suggests that the values might be a mistake or a missing value. However, the values have been normalized and we do not know the specific method used. Thus, there is a significant possibility that the value '0.00' does not represent a true '0.00' humidity and is just the minimal value in the data. Since the number of these outliers is small and they could be real data, we chose to keep them. 
+In fact, there is 22 hours in which the value is registered. Humidity of '0.00' is not possible in nature, which suggests that the values might be a mistake or a missing value. However, the values have been normalized and we do not know the specific method used. Thus, there is a significant possibility that the value '0.00' does not represent a true '0.00' humidity and is just the minimal value in the data. Since the number of these outliers is small and they could be real data, we chose to keep them.
 
 ## Missing data
 
@@ -302,7 +302,8 @@ hr_df <- data %>%
     n_missing_days = n_days - n) # using global variable `n_days`.
 
 ggplot(hr_df, aes(hr, n_missing_days)) +
-  geom_bar(stat = "identity")
+  geom_bar(stat = "identity") +
+  labs(x = "Hour", y = "Number of missing days")
 ```
 
 Determine where missing records are located. Seems that a system outage (or the like) was present on `2012-10-29` and `2012-10-30`, with a combined total of `35` missing records.
@@ -326,39 +327,35 @@ head(missing_df, 10)
 ## Covariance {.tabset}
 
 ### Covariance with predictor `atemp`
-The feeling temperature, represented as `atemp` within the data, by definition might be a combination of other predictor variables such as `temp`, `windspeed` and `hum`. To check whether indedepent variables might correlate (multicollinearity), we scatter plot `atemp` in particular with other predictor variables to observe potential covariance.
 
-```{r atemp covar, echo=FALSE, message=FALSE}
+Have suspicion that `atemp` might be correlated with `temp`, `windspeed` and `hum`, since it is a combined variable of the three (mayhaps). Justify this:
+
+```{r atemp covar, echo=FALSE}
 grid.arrange(
-  ggplot(data, aes(temp, atemp)) + geom_point(),
-  ggplot(data, aes(windspeed, atemp)) + geom_point(),
-  ggplot(data, aes(hum, atemp)) + geom_point(),
+  ggplot(data, aes(temp, atemp)) + geom_point() + labs(x = "Temperature", y = "Feeling temperature"),
+  ggplot(data, aes(windspeed, atemp)) + geom_point() + labs(x = "Wind speed", y = "Feeling temperature"),
+  ggplot(data, aes(hum, atemp)) + geom_point() + labs(x = "Humidity", y = "Feeling temperature"),
   nrow = 1
 )
 ```
 
-From this we can conclude that `atemp` and `temp` do in fact covary - showing a linear relation, whilst `hum` and `windspeed` show no particular relation with respect to `atemp`.
-
-```{r temp vs atemp}
-# Temperature covariance with rental count.
-cov(data$temp, data$cnt)
-
-# Feel temperature covariance with rental count.
-cov(data$atemp, data$cnt)
-```
-Due to the fact that `atemp` might be a correction of `temp` using potential latent variables, and that `temp` has a higher covariance with our outcome variable than `atemp`, we opt to not use the feel temperature in our model.
-
+Can conclude that predictor variables `atemp` and `temp` are heavily correlated, whilst `hum` and `windspeed` have a weaker relation with `atemp`.
 
 ### Covariance with outcome variable `cnt`
 
-We aim to observe possible covariance between our predictor and outcome variables, excluding `atemp`. From [`hr` clustering](#clus) we concluded that the time segment of day has an effect on the hourly rental count (e.g. there is a considerably lower amount of rental counts during the night). Hence, we investigate the relation between predictor and outcome *per* `hr_seg`.
+Remark:  
 
-```{r cnt covar, echo=FALSE, message=FALSE}
+- Non-linear relation between `hum` and `cnt`
+- Negative relation between `windspeed` and `cnt`
+- Positive relation between `temp` and `cnt`, up until high temperatures are reached (ppl dont like biking in hot water, don't blame them).
+
+```{r cnt covar, echo=FALSE}
 plot_cnt_covar <- function(plot) (
   plot
     + geom_point() 
     + geom_smooth(method = 'loess') 
     + facet_wrap(vars(hr_seg))
+    + labs(x = "Humidity", y = "Number of bike rentals")
 )
 
 ggplot(data, aes(temp, cnt)) %>% plot_cnt_covar()
@@ -366,12 +363,6 @@ ggplot(data, aes(windspeed, cnt)) %>% plot_cnt_covar()
 ggplot(data, aes(hum, cnt)) %>% plot_cnt_covar()
 
 ```
-
-Temperature (`temp`) shows a positive - almost linear - relation with rental count per each segment of the day. That said, the data suggests that there is a tipping point where an increase in temperature actually decreases the amount of bikes rented. It is possible that extremely high temperatures result in people being reluctant to go by bike, which is plausible.  
-
-`windspeed` has a negative relation with our target variable, though be it with a lot of variance. This also aligns with our assumptions that harsher weather conditions result in lower rental counts. It should be noted that both the `night` and `morning-noon` cluster show a linear relation, whilst increments in windspeed from `0.00` during the `eve` tend to _increase_ rental counts.
-
-Lastly, humidity's (`hum`) relation with respect to rental counts is more complex. Extreme values of humidity (i.e. values close to the normalised `0.00` and `1.00` values) tend to decrease the rental count, whilst average values of humidity result in more bikes being rented. The plot suggests that `hum~cnt` is not a linear function, but in fact a higher order one. This observation and its consequences are dealt with in [Model creation & comparison](#comp)
 
 ## Data Aggregation {#agg}
 After having created `hr_seq`, we aggregate the data based on both the date (`dteday`) and the hour segments (`hr_seg`. In case of dichotomous variables, we take the `mode` of the variable, with earlier defined function.
@@ -397,7 +388,7 @@ data <- data %>%
 
 
 
-# Model creation & comparison {#comp}
+# Model creation & comparison
 
 Later on in [Assumptions](#assum) we concluded a non-linear (higher-order) relation between `hum` and `cnt`. To approximate a linear relation, we've transformed the data to `f(x) = x^3`, saved in column `hum3`.  
 
@@ -405,8 +396,7 @@ Later on in [Assumptions](#assum) we concluded a non-linear (higher-order) relat
 data$hum3 = data$hum^3
 ```
 
-Our approach was to start with a simple linear model of temperature as a predictor and number of rentals as an outcome variable. We chose temperature since in the exploratory analysis it is the variable that showed the strongest correlation with the outcome variable. Then we created 3 other multiple linear regression models adding the other variables in the order of decreasing correlation of the additional predictor. Then we added the moderation of day segment (here add why we think day segment would be a good moderator).
-
+Create simple and complex models. Order is based on covariance table (high to low).
 ```{r model creation}
 # Create models.
 model1        <- lm(cnt ~ temp, data)
@@ -418,7 +408,7 @@ model4        <- lm(cnt ~ temp + hum3 + weathersit + windspeed, data)
 model2_mod    <- lm(cnt ~ (temp + hum3)* hr_seg, data)
 ```
 
-Then we checked the model fit improvement by verifying if the R^2 has significantly improved between adjacent models and finding the AIC, BIC and RMSE estimators. The best model  was identified based on these. 
+Comparison results table.
 ```{r comparison}
 RMSE <- function(model) {
   model$residuals^2 %>% mean()
@@ -459,7 +449,8 @@ Small remark, the `car` library with `crPlots` function is not applicable on mod
 ```{r lin temp, message=FALSE, echo=FALSE}
 ggplot(data, aes(temp, cnt, colour = hr_seg)) +
   geom_point() +
-  geom_smooth()
+  geom_smooth() +
+  labs(x = "Temperature", y = "Number of bike rentals")
 ```
 
 The relationship is not quite linear. It seems that, when the temperature gets too high, people stop renting bikes. The higher temperatures which stop people from renting bikes, do not seem to occur in the night. Therefore, the relationship between temperature and rent count seems linear in the night.
@@ -469,7 +460,8 @@ The relationship is not quite linear. It seems that, when the temperature gets t
 ```{r lin hum, message=FALSE, echo=FALSE}
 ggplot(data, aes(hum, cnt, colour = hr_seg)) +
   geom_point() +
-  geom_smooth()
+  geom_smooth() +
+  labs(x = "Temperature", y = "Number of bike rentals")
 ```
 
 To combat this non-linearity issue, we have transformed the predictor variable `hum` (as mentioned earlier). This does make the interpretation of the model less intuitive.
@@ -477,7 +469,8 @@ To combat this non-linearity issue, we have transformed the predictor variable `
 ```{r lin hum3, message=FALSE, echo=FALSE}
 ggplot(data, aes(hum3, cnt, colour = hr_seg)) +
   geom_point() +
-  geom_smooth()
+  geom_smooth() +
+  labs(x = "Humidity to the power of 3", y = "Number of bike rentals")
 ```
 
 This is the best transformation we could come up with. It's not perfect, but we're accepting this as sufficiently linear.
@@ -492,7 +485,8 @@ Next, we need to know whether there is a relationship between the two predictors
 ```{r multicol, message=FALSE, echo=FALSE}
 ggplot(data, aes(temp, hum3)) +
   geom_point() +
-  geom_smooth()
+  geom_smooth() +
+  labs(x = "Temperature", y = "Humidity to the power of 3")
 ```
 
 This graph shows there is no relationship between temperature and humidity, so we can conclude there is no issue of multicollinearity.
@@ -513,8 +507,8 @@ Next, we need to know whether the mean of the errors of the model are equal to z
 
 ```{r pred res relation, message=FALSE, echo=FALSE}
 grid.arrange(
-  ggplot(data, aes(temp, resid(model2_mod))) +  geom_point() +  geom_smooth(),
-  ggplot(data, aes(hum, resid(model2_mod))) +  geom_point() +  geom_smooth()
+  ggplot(data, aes(temp, resid(model2_mod))) + geom_point() + geom_smooth() + labs(x = "Temperature", y =     "Residuals"), 
+  ggplot(data, aes(hum, resid(model2_mod))) + geom_point() + geom_smooth() + labs(x = "Humidity", y = "Residuals")
 )
 ```
 
@@ -529,8 +523,8 @@ The second plot is similar, but it shows standardized residuals (or, more accura
 
 ```{r homosced}
 # Residual plot.
-model2_mod %>% plot(1)
-model2_mod %>% plot(3)
+  model2_mod %>% plot(1)
+  model2_mod %>% plot(3)
 ```
 
 The first plot is fine: the red line should be y = 0. That seems to be fine.
@@ -720,3 +714,4 @@ consistent toward 0, thus rejecting our null hypothesis.
 # References
 
 <div id="refs"></div>
+
