@@ -223,23 +223,20 @@ The distribution of temperature and feeling temperature is quite normal. However
 
 ## Outliers {.tabset}
 
-Outlier detection using quantiles.  
+Since there was an indication of outliers, we decided to detect them using quantiles. We made the following boxplots:
 ```{r outliers, echo=FALSE, message=FALSE}
 grid.arrange(
-    ggplot(data, aes(temp)) + geom_boxplot(),
-    ggplot(data, aes(atemp)) + geom_boxplot(),
-    ggplot(data, aes(hum)) + geom_boxplot(),
-    ggplot(data, aes(windspeed)) + geom_boxplot(),
-    ggplot(data, aes(cnt)) + geom_boxplot()
+    ggplot(data, aes(temp)) + geom_boxplot() + labs (x = "temperature")+ theme_bw(),
+    ggplot(data, aes(atemp)) + geom_boxplot() + labs (x = "feeling temperature")+ theme_bw(),
+    ggplot(data, aes(hum)) + geom_boxplot() + labs (x = "humidity")+ theme_bw(),
+    ggplot(data, aes(windspeed)) + geom_boxplot() + labs (x = "wind speed")+ theme_bw(),
+    ggplot(data, aes(cnt)) + geom_boxplot() + labs (x = "number of bike rentals")+ theme_bw()
 )
 ```
 
-Notice the following:
+The boxplots further support our observations from earlier. Temperature and feeling temperature are distributed very normally and display no outliers on the boxplots. Humidity has a a few "0" values that are flagged as outliers. In the wind speed, the large number of "0" values skews the distibution towards the smaller values, leaving a lot of the high wind speeds as outliers. The boxplot of number of bike rentals reveals a large number of outliers in our outcome variable. As we already saw that the night hours are dominated by small rental number, thus skewing the distribution to the left and leaving the high rental values as outliers. 
 
--   Large amount of outliers in `cnt` (outcome variables (due to right-skewed distr).
--   Some outliers in `windspeed`.
--   3x `0.00` values of `hum`.
-The 
+We investigate the "problematic" variables: humidity, wind speed and number of rentals, further below:
 
 ### Rental count outliers
 Large amount of `cnt` outliers is due to low rental count during the night, which shifts the median to a lower value. `hr_seg` acts as moderator, so better to check data displays *per* `hr_seg` cluster.  
