@@ -29,7 +29,7 @@ Considering these possible applications, this report will attempt to answer: **T
 
 ---
 # Dataset
-The dataset was retrieved from the open-source machine learning repository [UC Irvine](https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset) and Hadi Fanaee-T from the Laboratory of Artificial Intelligence and Decision Support (LIAAD), University of Porto is credited as its author. The bike rentals data originates from the Capital Bikeshare company based in Washington DC, United States. The dataset contains the hourly and daily counts of bike rentals and weather data in the years 2011 and 2012 in the American capital. We opted to use the hourly data due for modeling, due to the larger sample size (the dataset consists of 17379 data points) and less aggregated data. We found the smaller degree of aggregation important, as weather can change drastically throughout a 24 hour period. In case of further interest or replication of our research analysis, you can trace the link to this dataset at the end of this paper in our “References.” 
+The dataset was retrieved from the open-source machine learning repository [UC Irvine](https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset) and Hadi Fanaee-T from the Laboratory of Artificial Intelligence and Decision Support (LIAAD), University of Porto is credited as its author. The bike rentals data originates from the Capital Bikeshare company based in Washington DC, United States. The dataset contains the hourly and daily counts of bike rentals and weather data in the years 2011 and 2012 in the American capital. We opted to use the hourly data due for modeling, due to the larger sample size (the dataset consists of 17379 data points) and less aggregated data. We found the smaller degree of aggregation important, as weather can change drastically throughout a 24 hour period. In case of further interest or replication of our research analysis, you can trace the link to this dataset at the end of this paper in our [References](#ref)
 
 # Loading data
 
@@ -41,7 +41,7 @@ The repository provided us with three files, namely:
 
 We first specify our dependencies and read the data from `hour.csv`. We also load `day.csv`, solely for comparison purposes in our [EDA](#eda) phase.  
 
-```{r import, message = FALSE}
+```{r import dependencies, message = FALSE}
 library(tidyverse)
 library(fastDummies)
 library(kableExtra)
@@ -51,7 +51,7 @@ library(car)
 library(ICC)
 ```
 
-```{r read bike}
+```{r read data  files}
 # Source hourly data for model
 source_data <- read.csv("../data/hour.csv", header = TRUE, sep = ",") %>%
   as_tibble()
@@ -68,7 +68,7 @@ head(data)
 
 We then create a sub-selection of variables that are of interest for our model; these are the control, predictor and outcome variables, as well as, variables necessary for EDA and preprocessing.
 
-```{r select}
+```{r variable selection}
 data <- select(data,
                dteday,
                hr, 
@@ -82,7 +82,7 @@ data <- select(data,
 
 ## Variables description  
 
-```{r var_table, echo=FALSE}
+```{r variabe table, echo=FALSE}
 # creating a table describing the variables used
 variables <- read.csv("../data/variables2.csv", header = TRUE, sep = ";")%>%
   as_tibble()
@@ -94,7 +94,7 @@ variables %>%
 
 ```
 
-The categories of 'weathersit' represent the following weather phenomena and their combinations:
+The categories of `weathersit` represent the following weather phenomena and their combinations:
 
 1.    Clear, Few clouds, Partly cloudy, Partly cloudy
 2.    Mist and Cloudy, Mist and Broken clouds, Mist and Few clouds, Mist
@@ -112,9 +112,9 @@ However, 24 dummy codes is too much for substantive interpretation. Thus, we dec
 This section describes the process of creating new variables that will be later used to aggregate the data into segments. The aggregation process is described in [Data Aggregation](#agg).
 
 ### Expand `dteday` data
-We  create a new variable 'dt_num' that provides a numeric value that represents to which out of the 731 days in the dataset a given hourly data point belongs. We create it by converting the `dteday` variable.
+We  create a new variable `dt_num` that provides a numeric value that represents an identifier that maps an hourly based entry to a day ID $[1..7]$. We create it by converting the `dteday` variable.
 
-```{r expand date}
+```{r date expansion}
 # Converts datetime string to numeric with origin offset.
 date_to_num <- function(date, offset) {
    as.integer(as.Date(date, "%Y-%m-%d")) - offset
@@ -135,8 +135,8 @@ n_days <- n_distinct(data$dteday)
 ```
 
 ### Clustering of `hr` categories {#clus}
-We create a new variable 'hr_seg' that gives each data point with an hour within our giver segment the name of that segment. 
-```{r hour cut}
+We create a new variable `hr_seg` that maps each data point to a certain segment of the day (e.g. night, evening).
+```{r hour clustering}
 # Shift the `hr` data by 2 and increment the hour 23 for easier binning via the cut function.
 data <- data %>%
   mutate(hr_idx = hr + 2)
@@ -154,7 +154,7 @@ data <- data %>%
 
 After creating the categories, we check whether segmenting of `hr` was applied correctly by looking at single day data:
 
-```{r bin check}
+```{r validate clustering}
 # Check output for single day.
 data %>%
   filter(dteday == "2011-01-01") %>%
@@ -165,7 +165,7 @@ data %>%
 
 The segments were chosen based on distribution of rental counts in given hours. Additionally, we wanted the segments to be of equal size to ensure all hours are equally represented in the model. Below we present one of the graphs we used to make the decision. 
 
-```{r determine segment, message=FALSE, echo=FALSE}
+```{r reflect clustering, message=FALSE, echo=FALSE}
 
 # Plot hr~cnt with current segmentation indicator.
 data %>%
@@ -175,7 +175,7 @@ data %>%
   ) %>%
   ggplot(aes(hr, cnt, fill = hr_seg)) +
     geom_bar(stat = "identity") +
-    labs (x = "Hour (0 reprenents 1 am)",
+    labs (x = "Hour (0 represents 1 am)",
           y = "Sum of rentals in 2011 and 2012",
           title = "Distribution of bike rentals throughout the day") +
   theme_bw()
@@ -185,7 +185,7 @@ data %>%
 
 We obtained the descriptive statistics of our variables. 
 
-```{r summary, echo=FALSE}
+```{r summarise data, echo=FALSE}
 summary(data)
 ```
 
@@ -213,18 +213,18 @@ grid.arrange(
 )
 ```
 
-The histogram of number of bike rental reveals that lower numbers of rentals are much more frequent, with no (or little to no) bikes being rented being the most frequent state. Based on the graph used to create day segments, we are fairly certain that this distribution would look differently for the different segments and majority of the low number of rentals occur in the night. 
+The histogram of number of bike rental reveals that lower numbers of rentals are much more frequent, with no (or little to no) bikes being rented being the most frequent state. Based on the graph used to create day segments, we are fairly certain that this distribution would look differently per `hr_seg` cluster and that the majority of the low number of rentals occur in the night. 
 
-The hour graph confirms the missing records in some `hr` categories. We suspect that this could be caused by data cleaning of the author of the dataset, since the night hours are likely to have no rentals. Alternatively, maybe the bike rental company was not operating during those low traffic hours for reasons that could include lack of night workers or updates in the system. Lastly, we considered time changes, however, those would only impact the records of one of the hours. Nevertheless, the difference should not impact the final results of our analysis. 
+The hour graph confirms the missing records in some `hr` categories. We suspect that this could be caused by data cleaning from the author of the dataset, since the night hours are likely to have no rentals. Alternatively, maybe the bike rental company was not operating during those low traffic hours for reasons that could include lack of night workers or updates in the system. Lastly, we considered time changes, however, those would only impact the records of one of the hours. Nevertheless, the difference should not impact the final results of our analysis. 
 
-The weather phenomena histograms reveals that the 4th category, the harshest weather phenomena, is barely present. If we use it in our model the category would be a categorical outlier and needs to be addressed. 
+The weather phenomena histograms reveals that the 4th category, the harshest weather phenomena, is barely present. If we use it in our model, the category would be a categorical outlier and needs to be addressed. 
 
-The distribution of temperature and feeling temperature is quite normal. However, both humidity and wind speed have a number of "0" values that are disjointed from the rest of the data. They may constitute possible outliers and we will look at them closer in the next section. 
+The distribution of temperature and feeling temperature is quite normal. However, both humidity and wind speed have a number of `0` values that are disjointed from the rest of the data. They may constitute possible outliers and we will look at them closer in the next section. 
 
 ## Outliers {.tabset}
 
-Since there was an indication of outliers, we decided to detect them using quantiles. We made the following box plots:
-```{r outliers, echo=FALSE, message=FALSE}
+Since there was an indication of outliers, we decided to detect them using quantiles. We made the following box plots:  
+```{r boxplots, echo=FALSE, message=FALSE}
 grid.arrange(
     ggplot(data, aes(temp)) + geom_boxplot() + labs (x = "Temperature") + theme_bw(),
     ggplot(data, aes(atemp)) + geom_boxplot() + labs (x = "Feeling temperature") + theme_bw(),
@@ -234,20 +234,20 @@ grid.arrange(
 )
 ```
 
-The box plots further support our observations from earlier. Temperature and feeling temperature are distributed very normally and display no outliers on the box plots. Humidity has a a few "0" values that are flagged as outliers. In the wind speed, the large number of "0" values skews the distribution towards the smaller values, leaving a lot of the high wind speeds as outliers. The box plot of number of bike rentals reveals a large number of outliers in our outcome variable. As we already saw that the night hours are dominated by small rental number, thus skewing the distribution to the left and leaving the high rental values as outliers. 
+The box plots further support our observations from earlier. Temperature and feeling temperature are distributed very normally and display no outliers on the box plots. Humidity has a a few `0` values that are flagged as outliers. In the wind speed, the large number of `0` values skews the distribution towards the smaller values, leaving a lot of the high wind speeds as outliers. The box plot of number of bike rentals reveals a large number of outliers in our outcome variable. We already observed that the night hours are dominated by small rental number, thus skewing the distribution to the left and leaving the high rental values as outliers. 
 
 We investigate the "problematic" variables: humidity, wind speed and number of rentals, further below:
 
 ### Rental count outliers
 
 Since we suspect that a large amount of rentals' outliers is due to low rental count during the night, we decided to make separate histogram and boxplot graphs for the three day segments.  
-```{r cnt histogram, echo=FALSE, message=FALSE}
+```{r distributions rental count, echo=FALSE, message=FALSE}
 ggplot(data, aes(cnt)) + geom_histogram() + facet_wrap(vars(hr_seg))+labs (x = "Number of bike rentals",  title = "Distribution of bike rentals throughout the day segments")+ theme_bw()
 ```
 
 In the histogram we see the drastically different night distribution to the other two day segments, with the frequency of small numbers of rentals dominating the entire data. However, all three distributions are quite positively-skewed even after the division  into the time segments. 
 
-```{r cnt outliers, echo=FALSE, message=FALSE}
+```{r boxplots rental count, echo=FALSE, message=FALSE}
 ggplot(data, aes(cnt, colour = hr_seg)) + geom_boxplot()+ labs (x = "Number of bike rentals",  title = "Boxplot of bike rentals, seperated by the day segments")+ theme_bw()
 ```
 
@@ -255,8 +255,8 @@ The right-skewed distributions throughout the segments are visible in the boxplo
 
 ### Windspeed outliers
 
-The distribution of wind speed is right-skewed, hence large values are seen as outliers. It is importnat to notice how there's gap between "0" values and the first non-zero values, specifically:  
-```{r windspeed outliers}
+The distribution of wind speed is right-skewed, hence large values are seen as outliers. We do note the presence of gap between `0` values and the first non-zero values, specifically:  
+```{r windspeed value frequencies}
 data %>%
   group_by(windspeed) %>%
   summarise(n = n()) %>%
@@ -264,13 +264,13 @@ data %>%
   head()
 ```
 
-While the "0" values fall within the distribution, it is only odd that there's a small increment between the `0.00` occurrences and the values thereafter (e.g. `0.0869`).
+While the `0.00` values fall within the distribution, it is only odd that there's a small increment between the `0.00` occurrences and the values thereafter (e.g. `0.0869`).
 This might be due to sensor threshold for measuring wind speed or these might also be possible missing values which were replaced with `0.00`. Since we cannot know for certain and the number of occurrences for `0.00` is in line with neigbouring values, we choose to keep them.
 
 ### Humidity outliers
 
-A similar gap between '0.00' values and the next non-zero value occurs in the humidity variable: 
-```{r hum outliers}
+A similar gap between `0.00` values and the next non-zero value occurs in the humidity variable: 
+```{r humidity value frequencies}
 data %>%
   group_by(hum) %>%
   summarise(n = n()) %>%
@@ -278,7 +278,7 @@ data %>%
   head()
 ```
 
-In fact, there is 22 hours in which the value is registered. Humidity of '0.00' is not possible in nature, which suggests that the values might be a mistake or a missing value. However, the values have been normalized and we do not know the specific method used. Thus, there is a significant possibility that the value '0.00' does not represent a true '0.00' humidity and is just the minimal value in the data. Since the number of these outliers is small and they could be real data, we chose to keep them.
+In fact, there is 22 hours in which the value is registered. Humidity of `0.00` is not possible in nature, which suggests that the values might be a mistake or a missing value. However, the values have been normalized and we do not know the specific method used. Thus, there is a significant possibility that the value `0.00` does not represent a true `0.00` humidity and is just the minimal value in the data. Since the number of these outliers is small and they could be real data, we chose to keep them.  
 
 ## Missing data
 
@@ -289,11 +289,12 @@ anyNA(data)
 ```
 
 There is no standard missing data. There is no missing data in general under any other name. 
+
 ### Missing records for hour
 
 As mentioned before the only type of missing data is the fact that our dataset is not complete in terms of containing all the hours of the two years. Some `hr` values seem to have a lower amount of occurrences than others, as can be seen below:
 
-```{r hr missing, echo=FALSE}
+```{r number of missing entries, echo=FALSE}
 
 # Count the amount of records per hour.
 # Also add a column for amount of *missing* records.
@@ -314,7 +315,7 @@ ggplot(hr_df, aes(hr, n_missing_days)) +
 Thus, most of the missing hours are between 3am and 6am. The lack of records during the night could be potentically caused by maintenance conducted by the rental company at those hours, time changes or shortage of night workers. To investigate further we decided to see during which days are the missing hours present: 
 
 *Table showing days with the highest number of missing records*
-```{r missing location, message = FALSE, echo=FALSE}
+```{r index of missing entries, message = FALSE, echo=FALSE}
 # Create dataframe with amount of missing records per day.
 missing_df <- data %>%
   group_by(dteday, dt_num) %>%
@@ -331,16 +332,16 @@ missing_df <- data %>%
 head(missing_df, 10)
 ```
 
-The majority of the missing records seems to be concentrated on just four days. Particularly, on the '2012-10-29` and `2012-10-30`the records are missing for 36 consecutive hours, which suggests a system outage of the rental company or another similar disturbance to the measurement of the data. Since the number of missing records is small compared to the size of the dataset, we do not think they will impact our analysis.
+The majority of the missing records seems to be concentrated on just four days. Particularly, on the `2012-10-29` and `2012-10-30` the records are missing for 36 consecutive hours, which suggests a system outage of the rental company or another similar disturbance to the measurement of the data. Since the number of missing records is small compared to the size of the dataset, we do not think they will impact our analysis.
 
 
 ## Covariance {.tabset}
 
 ### Covariance with predictor `atemp`
 
-Have suspicion that `atemp` might be correlated with `temp`, `windspeed` and `hum`, since it is a combined variable of the three (mayhaps). Justify this:
+The feeling temperature, represented as `atemp` within the data, by definition might be a combination of other predictor variables such as `temp`, `windspeed` and `hum`. To check whether indedepent variables might correlate (multicollinearity), we scatter plot `atemp` in particular with other predictor variables to observe potential covariance.  
 
-```{r atemp covar, echo=FALSE}
+```{r atemp covariances, echo=FALSE, message=FALSE}
 grid.arrange(
   ggplot(data, aes(temp, atemp)) + geom_point() + labs(x = "Temperature", y = "Feeling temperature"),
   ggplot(data, aes(windspeed, atemp)) + geom_point() + labs(x = "Wind speed", y = "Feeling temperature"),
@@ -349,23 +350,27 @@ grid.arrange(
 )
 ```
 
-Can conclude that predictor variables `atemp` and `temp` are heavily correlated, whilst `hum` and `windspeed` have a weaker relation with `atemp`.
+From this we can conclude that `atemp` and `temp` do in fact covary - showing a linear relation, whilst `hum` and `windspeed` show no particular relation with respect to `atemp`.
+
+```{r temp vs atemp covariance}
+# Temperature covariance with rental count.
+cov(data$temp, data$cnt)
+
+# Feel temperature covariance with rental count.
+cov(data$atemp, data$cnt)
+```
+Due to the fact that `atemp` might be a correction of `temp` using potential latent variables, and that `temp` has a higher covariance with our outcome variable than `atemp`, we opt to not use the feel temperature in our model.
 
 ### Covariance with outcome variable `cnt`
 
-Remark:  
+We aim to observe possible covariance between our predictor and outcome variables, excluding `atemp`. From [`hr` clustering](#clus) we concluded that the time segment of day has an effect on the hourly rental count (e.g. there is a considerably lower amount of rental counts during the night). Hence, we investigate the relation between predictor and outcome *per* `hr_seg`.
 
-- Non-linear relation between `hum` and `cnt`
-- Negative relation between `windspeed` and `cnt`
-- Positive relation between `temp` and `cnt`, up until high temperatures are reached (ppl dont like biking in hot water, don't blame them).
-
-```{r cnt covar, echo=FALSE}
+```{r predictor vs outcome covariances, echo=FALSE, message=FALSE}
 plot_cnt_covar <- function(plot) (
   plot
     + geom_point() 
     + geom_smooth(method = 'loess') 
     + facet_wrap(vars(hr_seg))
-    + labs(x = "Humidity", y = "Number of bike rentals")
 )
 
 ggplot(data, aes(temp, cnt)) %>% plot_cnt_covar()
@@ -374,12 +379,18 @@ ggplot(data, aes(hum, cnt)) %>% plot_cnt_covar()
 
 ```
 
+Temperature (`temp`) shows a positive - almost linear - relation with rental count per each segment of the day. That said, the data suggests that there is a tipping point where an increase in temperature actually decreases the amount of bikes rented. It is possible that extremely high temperatures result in people being reluctant to go by bike, which is plausible.  
+
+`windspeed` has a negative relation with our target variable, though be it with a lot of variance. This also aligns with our assumptions that harsher weather conditions result in lower rental counts. It should be noted that both the `night` and `morning-noon` cluster show a linear relation, whilst increments in windspeed from `0.00` during the `eve` tend to _increase_ rental counts.
+
+Lastly, humidity's (`hum`) relation with respect to rental counts is more complex. Extreme values of humidity (i.e. values close to the normalised `0.00` and `1.00` values) tend to decrease the rental count, whilst average values of humidity result in more bikes being rented. The plot suggests that `hum~cnt` is not a linear function, but in fact a higher order one. This observation and its consequences are dealt with in [Model creation & comparison](#comp)
+
 ## Data Aggregation {#agg}
 
 As mentioned before, we think that differentiating the data by hour is essential. Thus, we created the day segments and now we aggregate the data based on both the date (`dteday`) and the hour segments (`hr_seg`). For the continuous variables we take a mean of the values within the segment. In case of categorical variable 'weatehrsit', we take the `mode` of the variable.
 
 
-```{r aggregate hour, message=FALSE}
+```{r aggregate on hr_seg, message=FALSE}
 # Create a `mode` function for aggregation.
 mode <- function(x) {
     which.max(table(x))
@@ -399,9 +410,9 @@ data <- data %>%
 ```
 
 
-# Model creation & comparison
+# Model creation & comparison {#comp}
 
-Our approach to modeling was to start with a simple linear model of temperature as a predictor and number of rentals as an outcome variable. We chose temperature since in the exploratory analysis it is the variable that showed the strongest correlation with the outcome variable. Then we created 3 other multiple linear regression models adding the other variables in the order of decreasing correlation of the additional predictor. We checked the model fit improvement by checking if the 'R^2'  has significantly improved between adjacent models and finding the AIC and BIC. The best model was identified based on these, which turned out to be model2 (temperature and humidity as predictors). Then we added the moderation of day segment since its impact on the distribution of rentals is likely to change the effect of weather.We tested if adding the moderation was a significant improvement by comparing AIC and BIC values between the "best model" and the moderation model and checking for significant 'R^2' improvements.  
+Our approach to modeling was to start with a simple linear model of temperature as a predictor and number of rentals as an outcome variable. We chose temperature since in the exploratory analysis suggests it being the variable showing the strongest correlation with the outcome variable. We then created 3 other multiple linear regression models adding the other variables in the order of decreasing correlation of the additional predictor, using a nested-model approach. We checked the model fit improvement by checking if the $R^2$ has significantly improved between adjacent models and finding the AIC and BIC. The best model was identified based on these, which turned out to be model2 (temperature and humidity as predictors). Then we added the moderation of day segment since its impact on the distribution of rentals is likely to change the effect of weather. We tested if adding the moderation was a significant improvement by comparing AIC and BIC values between the "best model" and the moderation model and checking for significant $R^2$ improvements.  
 
 Important to note is that later on, in [Assumptions](#assum), we concluded a non-linear (higher-order) relation between `hum` and `cnt`. To approximate a linear relation, we've transformed the data to `f(x) = x^3`, saved in column `hum3`. This transformed variable will be used throughout the modeling process.
 
@@ -734,7 +745,7 @@ increased probability of *p \< 3.91e-06* in the second model when
 including the predictor variable `hr_seg`. Not alarming since it is
 consistent toward 0, thus rejecting our null hypothesis.
 
-# References
+# References {ref}
 
 <div id="refs"></div>
 
