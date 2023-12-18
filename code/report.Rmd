@@ -468,7 +468,7 @@ anova(model2, model2_mod)
 
 The diffrence was significant between model1 and model2, however adding the weather phenomena as a predictor to create model3 did not improve it significantly. Based on this and the AIC and BIC value, model2 was chosen as the best one. 
 
-The anova test also reveals that adding the moderator significantly imporved model2. 
+The anova test also reveals that adding the moderator significantly improved model2. 
 
 Thus, the final model we chose, uses humidity and temperature as predictors and includes day segments as a moderator. 
 
@@ -744,7 +744,7 @@ increased probability of *p \< 3.91e-06* in the second model when
 including the predictor variable `hr_seg`. Not alarming since it is
 consistent toward 0, thus rejecting our null hypothesis.
 
-# References {ref}
+# References {#ref}
 
 <div id="refs"></div>
 
