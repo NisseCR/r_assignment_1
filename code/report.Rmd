@@ -335,7 +335,7 @@ head(missing_df, 10)
 The majority of the missing records seems to be concentrated on just four days. Particularly, on the `2012-10-29` and `2012-10-30` the records are missing for 36 consecutive hours, which suggests a system outage of the rental company or another similar disturbance to the measurement of the data. Since the number of missing records is small compared to the size of the dataset, we do not think they will impact our analysis.
 
 
-## Covariance {.tabset}
+## Covariance {.tabset} {#cov}
 
 ### Covariance with predictor `atemp`
 
@@ -414,11 +414,11 @@ data <- data %>%
 
 Our approach to modeling was to start with a simple linear model of temperature as a predictor and number of rentals as an outcome variable. We chose temperature since in the exploratory analysis suggests it being the variable showing the strongest correlation with the outcome variable. We then created 3 other multiple linear regression models adding the other variables in the order of decreasing correlation of the additional predictor, using a nested-model approach. We checked the model fit improvement by checking if the $R^2$ has significantly improved between adjacent models and finding the AIC and BIC. The best model was identified based on these, which turned out to be model2 (temperature and humidity as predictors). Then we added the moderation of day segment since its impact on the distribution of rentals is likely to change the effect of weather. We tested if adding the moderation was a significant improvement by comparing AIC and BIC values between the "best model" and the moderation model and checking for significant $R^2$ improvements.  
 
-Important to note is that later on, in [Assumptions](#assum), we concluded a non-linear (higher-order) relation between `hum` and `cnt`. To approximate a linear relation, we've transformed the data to `f(x) = x^3`, saved in column `hum3`. This transformed variable will be used throughout the modeling process.
+Important to note is that later on, in [Assumptions](#assum), we concluded a non-linear (higher-order) relation between `hum` and `cnt`. To approximate a linear relation, we've transformed the data to $f(x) = x^3$, saved in column `hum3`. This transformed variable will be used throughout the modeling process.
 
 The code below reflects our process:
 
-```{r solve non lin, echo=FALSE}
+```{r solve non linearity humidity, echo=FALSE}
 data$hum3 = data$hum^3
 ```
 
@@ -433,7 +433,7 @@ model4        <- lm(cnt ~ temp + hum3 + weathersit + windspeed, data)
 model2_mod    <- lm(cnt ~ (temp + hum3)* hr_seg, data)
 ```
 
-```{r comparison, echo=FALSE}
+```{r model comparison, echo=FALSE}
 RMSE <- function(model) {
   model$residuals^2 %>% mean()
 }
@@ -451,12 +451,12 @@ comp_df <- data.frame(
 comp_df
 ```
 
-Based on this table we can see that from the basic linear models model2 which includes only temperature and the transformed humidity had the lowest AIC and BIC scores. The RMSE favors model4, however the indicator does not penalize complexity and additional predictors will always lower it. Additionally, the diffrencees for all indicators  between models 2 to 4 are quite small. 
+Based on this table we can see that from the basic linear models, model2 - which includes only temperature and the transformed humidity - had the lowest AIC and BIC scores. The RMSE favors model4, however the indicator does not penalize complexity and additional predictors will always lower it. Additionally, the differences for all indicators  between models 2 to 4 are quite small. 
 
 The addition of the moderator to model2 clearly improved the model significantly, as the AIC, BIC and RMSE values decreased (and the RMSE value decreased by over 60%).
 
-The anova tests were used to verify if the 'R^2' values decreased significantly as the model became more complicated:
-```{r anovas}
+The anova tests were used to verify if the $R^2$ values decreased significantly as the model became more complicated:
+```{r anove comparison}
 # Simple and complex model
 anova(model1, model2)
 anova(model2, model3)
@@ -470,28 +470,28 @@ The diffrence was significant between model1 and model2, however adding the weat
 
 The anova test also reveals that adding the moderator significantly imporved model2. 
 
-Thus, the final model we chose uses only humidity and temperature as predictors and includes day segments as a moderator. 
+Thus, the final model we chose, uses humidity and temperature as predictors and includes day segments as a moderator. 
 
 # Assumptions {#assum}
 
 ## Linearity {.tabset}
 
-Small remark, the `car` library with `crPlots` function is not applicable on model with interactions, hence we plot per predictor to check relations.
+The `car` library provides the `crPlots` function, which is not applicable on models with interactions, hence we checked possible violation of linearity by plotting *per* predictor.
 
 ### `temp`
 
-```{r lin temp, message=FALSE, echo=FALSE}
+```{r temperature linearity, message=FALSE, echo=FALSE}
 ggplot(data, aes(temp, cnt, colour = hr_seg)) +
   geom_point() +
   geom_smooth() +
   labs(x = "Temperature", y = "Number of bike rentals")
 ```
 
-The relationship is not quite linear. It seems that, when the temperature gets too high, people stop renting bikes. The higher temperatures which stop people from renting bikes, do not seem to occur in the night. Therefore, the relationship between temperature and rent count seems linear in the night.
+The relationship is not quite linear. As discussed in our [EDA](#cov) phase, higher temperatures veer away from the linear relation trajectory. That said, data points within the `night` segment do behave in a linear manner. Needless to say, for the larger proportion of the data, the relation between temperature and our target variable is somewhat linear, hence not violating the linearity assumption.
 
 ### `hum`
 
-```{r lin hum, message=FALSE, echo=FALSE}
+```{r humidity linearity, message=FALSE, echo=FALSE}
 ggplot(data, aes(hum, cnt, colour = hr_seg)) +
   geom_point() +
   geom_smooth() +
@@ -500,7 +500,7 @@ ggplot(data, aes(hum, cnt, colour = hr_seg)) +
 
 To combat this non-linearity issue, we have transformed the predictor variable `hum` (as mentioned earlier). This does make the interpretation of the model less intuitive.
 
-```{r lin hum3, message=FALSE, echo=FALSE}
+```{r humidity3 linearity, message=FALSE, echo=FALSE}
 ggplot(data, aes(hum3, cnt, colour = hr_seg)) +
   geom_point() +
   geom_smooth() +
@@ -527,10 +527,9 @@ This graph shows there is no relationship between temperature and humidity, so w
 
 ## Exogenous predictors
 
-
 We need to check whether there is no relationship between the predictors of the model, and its errors. 
 
-```{r cov e}
+```{r covariance target vs residuals}
 cov_res <- cov(predict(model2_mod), resid(model2_mod))
 cov_res
 ```
@@ -546,7 +545,7 @@ grid.arrange(
 )
 ```
 
-The first graph is not quite right, though the line only starts deviating from 0, in the latter part of the graph. There's less data points there as well, so it makes sense. We can make do, though.
+The first graph is not quite right, though the line only starts deviating from 0 in the latter part of the graph. There's less data points there as well, so it makes sense. We can make do, though.
 The second graph is completely fine.
 
 ## Constant & finite variance
@@ -568,7 +567,7 @@ The second plot also seems to be roughly fine. There is a weird cluster of error
 
 The errors should be independent. Now, we can check for clustering, though we have already manually clustered the data. We can check if that clustering was sufficient.
 
-```{r}
+```{r icc check, message=FALSE, warning=FALSE}
 ICCbare(data$temp, resid(model2_mod))
 ICCbare(data$hum, resid(model2_mod))
 ICCbare(data$hr_seg, resid(model2_mod))
@@ -592,7 +591,7 @@ We want the errors to be as close to the dotted line as possible. It's not looki
 
 We need to check whether the model contains any influential data points. That includes outliers and high-leverage observations. We can check the outliers first.
 
-```{r indep res}
+```{r independent residuals}
 plot(rstudent(model2_mod)) 
 ```
 
@@ -627,7 +626,7 @@ summary(model2)
 
 -   Call: Shows the function call to compute our regression model, which
     is: $$
-    lm(formula = cnt \~ (temp + hum3) \* hr_seg, data = data)
+    lm(formula = cnt \thicksim (temp + hum3) \cdot hr_seg, data = data)
     $$
 -   Residuals: A quick view of the distribution of the residuals.
 -   Coefficients: Shows the regression beta coefficients and their
