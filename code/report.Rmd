@@ -282,17 +282,19 @@ In fact, there is 22 hours in which the value is registered. Humidity of '0.00' 
 
 ## Missing data
 
-Check standard NA values. There are none.
+The dataset's source claimed there is no missing data. We verified that, by checking if any standard NA values are present.
 
 ```{r missing standard}
 anyNA(data)
 ```
 
+There is no standard missing data. There is no missing data in general under any other name. 
 ### Missing records for hour
 
-Some `hr` values seem to have a lower amount of occurrences than others, as can be seen in distribution plot of [Distributions](#dists)
+As mentioned before the only type of missing data is the fact that our dataset is not complete in terms of containing all the hours of the two years. Some `hr` values seem to have a lower amount of occurrences than others, as can be seen below:
 
-```{r hr missing}
+```{r hr missing, echo=FALSE}
+
 # Count the amount of records per hour.
 # Also add a column for amount of *missing* records.
 hr_df <- data %>%
@@ -302,12 +304,17 @@ hr_df <- data %>%
     n_missing_days = n_days - n) # using global variable `n_days`.
 
 ggplot(hr_df, aes(hr, n_missing_days)) +
-  geom_bar(stat = "identity") +
-  labs(x = "Hour", y = "Number of missing days")
+  geom_bar(stat = "identity")+
+  labs (x = "hour, with 0 representing 1 am",
+        y =  "Number of missing records",
+        title = "Distribution of missing hours")+
+  theme_bw()
 ```
 
-Determine where missing records are located. Seems that a system outage (or the like) was present on `2012-10-29` and `2012-10-30`, with a combined total of `35` missing records.
-```{r missing location, message = FALSE}
+Thus, most of the missing hours are between 3am and 6am. The lack of records during the night could be potentically caused by maintenance conducted by the rental company at those hours, time changes or shortage of night workers. To investigate further we decided to see during which days are the missing hours present: 
+
+*Table showing days with the highest number of missing records*
+```{r missing location, message = FALSE, echo=FALSE}
 # Create dataframe with amount of missing records per day.
 missing_df <- data %>%
   group_by(dteday, dt_num) %>%
@@ -319,10 +326,13 @@ missing_df <- data %>%
   arrange(desc(n_missing_records)) %>%
   select(dteday, n_missing_records)
 
+# `n_missing_records` is the amount of missing entries on that particular day.
+
 head(missing_df, 10)
 ```
 
-`n_missing_records` is the amount of missing entries on that particular day.
+The majority of the missing records seems to be concentrated on just four days. Particularly, on the '2012-10-29` and `2012-10-30`the records are missing for 36 consecutive hours, which suggests a system outage of the rental company or another similar disturbance to the measurement of the data. Since the number of missing records is small compared to the size of the dataset, we do not think they will impact our analysis.
+
 
 ## Covariance {.tabset}
 
@@ -365,7 +375,10 @@ ggplot(data, aes(hum, cnt)) %>% plot_cnt_covar()
 ```
 
 ## Data Aggregation {#agg}
-After having created `hr_seq`, we aggregate the data based on both the date (`dteday`) and the hour segments (`hr_seg`. In case of dichotomous variables, we take the `mode` of the variable, with earlier defined function.
+
+As mentioned before, we think that differentiating the data by hour is essential. Thus, we created the day segments and now we aggregate the data based on both the date (`dteday`) and the hour segments (`hr_seg`). For the continuous variables we take a mean of the values within the segment. In case of categorical variable 'weatehrsit', we take the `mode` of the variable.
+
+
 ```{r aggregate hour, message=FALSE}
 # Create a `mode` function for aggregation.
 mode <- function(x) {
@@ -386,17 +399,18 @@ data <- data %>%
 ```
 
 
-
-
 # Model creation & comparison
 
-Later on in [Assumptions](#assum) we concluded a non-linear (higher-order) relation between `hum` and `cnt`. To approximate a linear relation, we've transformed the data to `f(x) = x^3`, saved in column `hum3`.  
+Our approach to modeling was to start with a simple linear model of temperature as a predictor and number of rentals as an outcome variable. We chose temperature since in the exploratory analysis it is the variable that showed the strongest correlation with the outcome variable. Then we created 3 other multiple linear regression models adding the other variables in the order of decreasing correlation of the additional predictor. We checked the model fit improvement by checking if the 'R^2'  has significantly improved between adjacent models and finding the AIC and BIC. The best model was identified based on these, which turned out to be model2 (temperature and humidity as predictors). Then we added the moderation of day segment since its impact on the distribution of rentals is likely to change the effect of weather.We tested if adding the moderation was a significant improvement by comparing AIC and BIC values between the "best model" and the moderation model and checking for significant 'R^2' improvements.  
 
-```{r solve non lin}
+Important to note is that later on, in [Assumptions](#assum), we concluded a non-linear (higher-order) relation between `hum` and `cnt`. To approximate a linear relation, we've transformed the data to `f(x) = x^3`, saved in column `hum3`. This transformed variable will be used throughout the modeling process.
+
+The code below reflects our process:
+
+```{r solve non lin, echo=FALSE}
 data$hum3 = data$hum^3
 ```
 
-Create simple and complex models. Order is based on covariance table (high to low).
 ```{r model creation}
 # Create models.
 model1        <- lm(cnt ~ temp, data)
@@ -408,8 +422,7 @@ model4        <- lm(cnt ~ temp + hum3 + weathersit + windspeed, data)
 model2_mod    <- lm(cnt ~ (temp + hum3)* hr_seg, data)
 ```
 
-Comparison results table.
-```{r comparison}
+```{r comparison, echo=FALSE}
 RMSE <- function(model) {
   model$residuals^2 %>% mean()
 }
@@ -427,7 +440,11 @@ comp_df <- data.frame(
 comp_df
 ```
 
-Anova tests.
+Based on this table we can see that from the basic linear models model2 which includes only temperature and the transformed humidity had the lowest AIC and BIC scores. The RMSE favors model4, however the indicator does not penalize complexity and additional predictors will always lower it. Additionally, the diffrencees for all indicators  between models 2 to 4 are quite small. 
+
+The addition of the moderator to model2 clearly improved the model significantly, as the AIC, BIC and RMSE values decreased (and the RMSE value decreased by over 60%).
+
+The anova tests were used to verify if the 'R^2' values decreased significantly as the model became more complicated:
 ```{r anovas}
 # Simple and complex model
 anova(model1, model2)
@@ -437,6 +454,12 @@ anova(model3, model4)
 # Test addition of moderator
 anova(model2, model2_mod)
 ```
+
+The diffrence was significant between model1 and model2, however adding the weather phenomena as a predictor to create model3 did not improve it significantly. Based on this and the AIC and BIC value, model2 was chosen as the best one. 
+
+The anova test also reveals that adding the moderator significantly imporved model2. 
+
+Thus, the final model we chose uses only humidity and temperature as predictors and includes day segments as a moderator. 
 
 # Assumptions {#assum}
 
