@@ -394,7 +394,8 @@ Later on in [Assumptions](#assum) we concluded a non-linear (higher-order) relat
 data$hum3 = data$hum^3
 ```
 
-Create simple and complex models. Order is based on covariance table (high to low).
+Our approach was to start with a simple linear model of temperature as a predictor and number of rentals as an outcome variable. We chose temperature since in the exploratory analysis it is the variable that showed the strongest correlation with the outcome variable. Then we created 3 other multiple linear regression models adding the other variables in the order of decreasing correlation of the additional predictor. Then we added the moderation of day segment (here add why we think day segment would be a good moderator).
+
 ```{r model creation}
 # Create models.
 model1        <- lm(cnt ~ temp, data)
@@ -406,7 +407,7 @@ model4        <- lm(cnt ~ temp + hum3 + weathersit + windspeed, data)
 model2_mod    <- lm(cnt ~ (temp + hum3)* hr_seg, data)
 ```
 
-Comparison results table.
+Then we checked the model fit improvement by verifying if the R^2 has significantly improved between adjacent models and finding the AIC, BIC and RMSE estimators. The best model  was identified based on these. 
 ```{r comparison}
 RMSE <- function(model) {
   model$residuals^2 %>% mean()
