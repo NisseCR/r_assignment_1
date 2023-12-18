@@ -3706,7 +3706,7 @@ adding the weather phenomena as a predictor to create model3 did not
 improve it significantly. Based on this and the AIC and BIC value,
 model2 was chosen as the best one.</p>
 <p>The anova test also reveals that adding the moderator significantly
-imporved model2.</p>
+improved model2.</p>
 <p>Thus, the final model we chose, uses humidity and temperature as
 predictors and includes day segments as a moderator.</p>
 </div>
@@ -3881,21 +3881,23 @@ well the model fits our data.</li>
 <h2>Partial Effects - Multiple Linear Regression</h2>
 <div id="interpretation" class="section level3">
 <h3>Interpretation</h3>
-<p><strong>What is the effect of humidity on average rental bike, after
-controlling for temperature?</strong></p>
-<p>First, the intercept tells us the location of the dependent variable,
-when the independent variable equals 0 ($x=0). Using our regression
-model as an example, the expected <em>average</em> bike rental when
-temperature reaches <em>0°C</em> is <em>659.44</em> units.</p>
-<p>Second, the regression coefficients indicate the amount of change in
-the predicted variable when the predictor increases with one unit. In
-this regression model, the temperature is normalized, which is why the
-<em>average</em> rental bike is expected to <strong>increase</strong> by
-<em>2974.36</em>, if humidity is assumed not to have any predictive
-power (“hum3”). Whereas, for each additional point of humidity,
+<p><strong>What is the effect of humidity and temperature on average
+rental bike?</strong></p>
+<p>Firstly, the intercept tells us the value of the dependent variable -
+bike rentals, when the independent variables equal 0. In our regression
+model, the expected <em>average</em> bike rental when temperature and
+humidity are equal to 0 is <em>659.44</em> bikes.</p>
+<p>Secondly, the regression coefficients indicate the amount of change
+in the predicted variable when the predictor increases with one unit.
+The <em>average</em> rental bike is expected to
+<strong>increase</strong> by <em>2974.36</em> if temperature increases
+by 1, assuming humidity stays constant. In this regression model, the
+temperature is normalized, thus cannot be interpreted as an increase in
+°C and an increase by one unit leads to a very large increase in bike
+rentals. Whereas, for each additional point of humidity,
 <em>average</em> bike rental is expected to <em>decrease by 2082.68
-units</em>, if temperature (“temp”) is assumed not to have any
-predictive power.</p>
+units</em>, if temperature (“temp”) stays constant. The effect of
+temperature, humidity and the intercept are all significant.</p>
 </div>
 </div>
 <div id="significance-testing---p-values" class="section level2">
@@ -4020,8 +4022,8 @@ alarming since it is consistent toward 0, thus rejecting our null
 hypothesis.</p>
 </div>
 </div>
-<div id="references-ref" class="section level1">
-<h1>References {ref}</h1>
+<div id="ref" class="section level1">
+<h1>References</h1>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-beland" class="csl-entry">
 Béland, D. 2014. <em>Developing Sustainable Urban Transportation</em>.

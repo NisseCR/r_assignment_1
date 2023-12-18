@@ -640,22 +640,15 @@ summary(model2)
 
 ### Interpretation
 
-**What is the effect of humidity on average rental bike, after
-controlling for temperature?**
+**What is the effect of humidity and temperature on average rental bike?**
 
-First, the intercept tells us the location of the dependent variable,
-when the independent variable equals 0 (\$x=0). Using our regression
-model as an example, the expected *average* bike rental when temperature
-reaches *0°C* is *659.44* units.
+Firstly, the intercept tells us the value of the dependent variable - bike rentals,
+when the independent variables equal 0. In our regression
+model, the expected *average* bike rental when temperature
+and humidity are equal to 0 is *659.44* bikes.
 
-Second, the regression coefficients indicate the amount of change in the
-predicted variable when the predictor increases with one unit. In this
-regression model, the temperature is normalized, which is why the
-*average* rental bike is expected to **increase** by *2974.36*, if humidity 
-is assumed not to have any predictive power ("hum3"). 
-Whereas, for each additional point of humidity, *average* 
-bike rental is expected to *decrease by 2082.68 units*, if temperature
-("temp") is assumed not to have any predictive power.
+Secondly, the regression coefficients indicate the amount of change in the predicted variable when the predictor increases with one unit. The *average* rental bike is expected to **increase** by *2974.36* if temperature increases by 1, assuming humidity stays constant. In this regression model, the temperature is normalized, thus cannot be interpreted as an increase in °C and an increase by one unit leads to a very large increase in bike rentals. 
+Whereas, for each additional point of humidity, *average* bike rental is expected to *decrease by 2082.68 units*, if temperature ("temp") stays constant. The effect of temperature, humidity and the intercept are all significant.
 
 ## Significance testing - P values
 
