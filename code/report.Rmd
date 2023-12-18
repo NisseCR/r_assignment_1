@@ -223,7 +223,7 @@ The distribution of temperature and feeling temperature is quite normal. However
 
 ## Outliers {.tabset}
 
-Since there was an indication of outliers, we decided to detect them using quantiles. The following boxplots with an IQR multipler equal to 1.5 are made:
+Since there was an indication of outliers, we decided to detect them using quantiles. The following boxplots with an IQR multipler equal to 1.5 are made:  
 ```{r outliers, echo=FALSE, message=FALSE}
 grid.arrange(
     ggplot(data, aes(temp)) + geom_boxplot() + labs (x = "temperature")+ theme_bw(),
@@ -240,7 +240,7 @@ We investigate the "problematic" variables: humidity, wind speed and number of r
 
 ### Rental count outliers
 
-Since we suspect that a large amount of rentals' outliers is due to low rental count during the night, we decided to make separate histogram and boxplot graphs for the three day segments.
+Since we suspect that a large amount of rentals' outliers is due to low rental count during the night, we decided to make separate histogram and boxplot graphs for the three day segments.  
 ```{r cnt histogram, echo=FALSE, message=FALSE}
 ggplot(data, aes(cnt)) + geom_histogram() + facet_wrap(vars(hr_seg))+labs (x = "number of bike rentals",  title = "Distribution of bike rentals throughout the day segments")+ theme_bw()
 ```
@@ -326,10 +326,9 @@ head(missing_df, 10)
 ## Covariance {.tabset}
 
 ### Covariance with predictor `atemp`
+The feeling temperature, represented as `atemp` within the data, by definition might be a combination of other predictor variables such as `temp`, `windspeed` and `hum`. To check whether indedepent variables might correlate (multicollinearity), we scatter plot `atemp` in particular with other predictor variables to observe potential covariance.
 
-Have suspicion that `atemp` might be correlated with `temp`, `windspeed` and `hum`, since it is a combined variable of the three (mayhaps). Justify this:
-
-```{r atemp covar, echo=FALSE}
+```{r atemp covar, echo=FALSE, message=FALSE}
 grid.arrange(
   ggplot(data, aes(temp, atemp)) + geom_point(),
   ggplot(data, aes(windspeed, atemp)) + geom_point(),
@@ -338,17 +337,23 @@ grid.arrange(
 )
 ```
 
-Can conclude that predictor variables `atemp` and `temp` are heavily correlated, whilst `hum` and `windspeed` have a weaker relation with `atemp`.
+From this we can conclude that `atemp` and `temp` do in fact covary - showing a linear relation, whilst `hum` and `windspeed` show no particular relation with respect to `atemp`.
+
+```{r temp vs atemp}
+# Temperature covariance with rental count.
+cov(data$temp, data$cnt)
+
+# Feel temperature covariance with rental count.
+cov(data$atemp, data$cnt)
+```
+Due to the fact that `atemp` might be a correction of `temp` using potential latent variables, and that `temp` has a higher covariance with our outcome variable than `atemp`, we opt to not use the feel temperature in our model.
+
 
 ### Covariance with outcome variable `cnt`
 
-Remark:  
+We aim to observe possible covariance between our predictor and outcome variables, excluding `atemp`. From [`hr` clustering](#clus) we concluded that the time segment of day has an effect on the hourly rental count (e.g. there is a considerably lower amount of rental counts during the night). Hence, we investigate the relation between predictor and outcome *per* `hr_seg`.
 
-- Non-linear relation between `hum` and `cnt`
-- Negative relation between `windspeed` and `cnt`
-- Positive relation between `temp` and `cnt`, up until high temperatures are reached (ppl dont like biking in hot water, don't blame them).
-
-```{r cnt covar, echo=FALSE}
+```{r cnt covar, echo=FALSE, message=FALSE}
 plot_cnt_covar <- function(plot) (
   plot
     + geom_point() 
@@ -361,6 +366,12 @@ ggplot(data, aes(windspeed, cnt)) %>% plot_cnt_covar()
 ggplot(data, aes(hum, cnt)) %>% plot_cnt_covar()
 
 ```
+
+Temperature (`temp`) shows a positive - almost linear - relation with rental count per each segment of the day. That said, the data suggests that there is a tipping point where an increase in temperature actually decreases the amount of bikes rented. It is possible that extremely high temperatures result in people being reluctant to go by bike, which is plausible.  
+
+`windspeed` has a negative relation with our target variable, though be it with a lot of variance. This also aligns with our assumptions that harsher weather conditions result in lower rental counts. It should be noted that both the `night` and `morning-noon` cluster show a linear relation, whilst increments in windspeed from `0.00` during the `eve` tend to _increase_ rental counts.
+
+Lastly, humidity's (`hum`) relation with respect to rental counts is more complex. Extreme values of humidity (i.e. values close to the normalised `0.00` and `1.00` values) tend to decrease the rental count, whilst average values of humidity result in more bikes being rented. The plot suggests that `hum~cnt` is not a linear function, but in fact a higher order one. This observation and its consequences are dealt with in [Model creation & comparison](#comp)
 
 ## Data Aggregation {#agg}
 After having created `hr_seq`, we aggregate the data based on both the date (`dteday`) and the hour segments (`hr_seg`. In case of dichotomous variables, we take the `mode` of the variable, with earlier defined function.
@@ -386,7 +397,7 @@ data <- data %>%
 
 
 
-# Model creation & comparison
+# Model creation & comparison {#comp}
 
 Later on in [Assumptions](#assum) we concluded a non-linear (higher-order) relation between `hum` and `cnt`. To approximate a linear relation, we've transformed the data to `f(x) = x^3`, saved in column `hum3`.  
 
@@ -709,4 +720,3 @@ consistent toward 0, thus rejecting our null hypothesis.
 # References
 
 <div id="refs"></div>
-
