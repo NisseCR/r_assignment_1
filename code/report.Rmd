@@ -94,6 +94,14 @@ variables %>%
 
 ```
 
+The categories of 'weathersit' represent the following weather phenomena and their combinations:
+
+1.    Clear, Few clouds, Partly cloudy, Partly cloudy
+2.    Mist and Cloudy, Mist and Broken clouds, Mist and Few clouds, Mist
+3.    Light Snow, Light Rain and Thunderstorm and Scattered clouds, Light Rain and Scattered clouds
+4.    Heavy Rain and Ice Pallets and Thunderstorm and Mist, Snow and Fog
+
+
 # Preprocessing & EDA {#eda}
 
 ## Creating Additional Variables {.tabset}
