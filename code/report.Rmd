@@ -223,7 +223,7 @@ The distribution of temperature and feeling temperature is quite normal. However
 
 ## Outliers {.tabset}
 
-Since there was an indication of outliers, we decided to detect them using quantiles. We made the following box plots:
+Since there was an indication of outliers, we decided to detect them using quantiles. The following boxplots with an IQR multipler equal to 1.5 are made:
 ```{r outliers, echo=FALSE, message=FALSE}
 grid.arrange(
     ggplot(data, aes(temp)) + geom_boxplot() + labs (x = "temperature")+ theme_bw(),
@@ -239,20 +239,23 @@ The box plots further support our observations from earlier. Temperature and fee
 We investigate the "problematic" variables: humidity, wind speed and number of rentals, further below:
 
 ### Rental count outliers
-Large amount of `cnt` outliers is due to low rental count during the night, which shifts the median to a lower value. `hr_seg` acts as moderator, so better to check data displays *per* `hr_seg` cluster.  
 
-```{r cnt outliers, echo=FALSE, message=FALSE}
-ggplot(data, aes(cnt, colour = hr_seg)) + geom_boxplot()
-
-ggplot(data, aes(cnt)) + geom_histogram() + facet_wrap(vars(hr_seg))
+Since we suspect that a large amount of rentals' outliers is due to low rental count during the night, we decided to make separate histogram and boxplot graphs for the three day segments.
+```{r cnt histogram, echo=FALSE, message=FALSE}
+ggplot(data, aes(cnt)) + geom_histogram() + facet_wrap(vars(hr_seg))+labs (x = "number of bike rentals",  title = "Distribution of bike rentals throughout the day segments")+ theme_bw()
 ```
 
-Even then we see that distributions per `hr_seq` are heavily right-skewed, explaining the multitude of outliers.  
-Looking at the tail-end of the `cnt` values, these seem to be non-error outliers. Furthermore they seem to be reasonable values due to right-skewness, hence we don't remove them.
+In the histogram we see the drastically different night distribution to the other two day segments, with the frequency of small numbers of rentals dominating the entire data. However, all three distributions are quite positively-skewed even after the division  into the time segments. 
+
+```{r cnt outliers, echo=FALSE, message=FALSE}
+ggplot(data, aes(cnt, colour = hr_seg)) + geom_boxplot()+ labs (x = "number of bike rentals",  title = "Boxplot of bike rentals, seperated by the day segments")+ theme_bw()
+```
+
+The right-skewed distributions throughout the segments are visible in the boxplots. That is why dividing the boxplot according to the time segments still results in outliers at the tail-end of the values. However, the outlier values are quite reasonable. It is realistic for the rental company to be far more likely to receive  smaller number of rentals and not operating at their full capacity. Hence the outliers remain in the dataset.
 
 ### Windspeed outliers
 
-Again right-skewed, hence large values are seen as outliers. Do notice how there's gap between 0 values and the first non-zero values, specifically:  
+The distribution of wind speed is right-skewed, hence large values are seen as outliers. It is importnat to notice how there's gap between "0" values and the first non-zero values, specifically:  
 ```{r windspeed outliers}
 data %>%
   group_by(windspeed) %>%
@@ -261,13 +264,12 @@ data %>%
   head()
 ```
 
-Might be due to sensor threshold for measuring windspeed. In any case, these values fall within the distribution, it is only odd that there's a small increment between the `0.00` occurrences and the values thereafter (e.g. `0.0869`).
-These might also be possible missing values which are replaced with `0.00`.  
-In any case, we cannot know for certain. Since the number of occurrences for `0.00` is in line with neighboring values, we choose to keep them.
+While the "0" values fall within the distribution, it is only odd that there's a small increment between the `0.00` occurrences and the values thereafter (e.g. `0.0869`).
+This might be due to sensor threshold for measuring wind speed or these might also be possible missing values which were replaced with `0.00`. Since we cannot know for certain and the number of occurrences for `0.00` is in line with neigbouring values, we choose to keep them.
 
 ### Humidity outliers
 
-`hum` is left-skewed.
+A similar gap between '0.00' values and the next non-zero value occurs in the humidity variable: 
 ```{r hum outliers}
 data %>%
   group_by(hum) %>%
@@ -276,10 +278,7 @@ data %>%
   head()
 ```
 
-
-```{r}
-# Code for removing the outliers that we think are here because of a mistake?
-```
+In fact, there is 22 hours in which the value is registered. Humidity of '0.00' is not possible in nature, which suggests that the values might be a mistake or a missing value. However, the values have been normalized and we do not know the specific method used. Thus, there is a significant possibility that the value '0.00' does not represent a true '0.00' humidity and is just the minimal value in the data. Since the number of these outliers is small and they could be real data, we chose to keep them. 
 
 ## Missing data
 
