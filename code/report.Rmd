@@ -134,7 +134,7 @@ data <- data %>%
 n_days <- n_distinct(data$dteday)
 ```
 
-### Clustering of `hr` categories
+### Clustering of `hr` categories {#clus}
 We create a new variable 'hr_seg' that gives each data point with an hour within our giver segment the name of that segment. 
 ```{r hour cut}
 # Shift the `hr` data by 2 and increment the hour 23 for easier binning via the cut function.
@@ -197,21 +197,29 @@ Since the summaries are not giving a precise enough picture, we histograms of th
 
 ```{r distributions, echo=FALSE, message=FALSE}
 grid.arrange(
-    ggplot(data, aes(hr)) + geom_histogram(binwidth = 1),
-    ggplot(data, aes(weathersit)) + geom_histogram(binwidth = 1),
-    ggplot(data, aes(temp)) + geom_histogram(),
-    ggplot(data, aes(atemp)) + geom_histogram(),
-    ggplot(data, aes(hum)) + geom_histogram(),
-    ggplot(data, aes(windspeed)) + geom_histogram(),
-    ggplot(data, aes(cnt)) + geom_histogram()
+      ggplot(data, aes(cnt)) + geom_histogram() +labs (x = "number of bike rentals",
+          y = "frequency")+ theme_bw(),
+    ggplot(data, aes(hr)) + geom_histogram(binwidth = 1) + labs (x = "hour",
+          y = "frequency")+ theme_bw(),
+    ggplot(data, aes(weathersit)) + geom_histogram(binwidth = 1) + labs (x = "weather phenomena", y = "frequency")+ theme_bw(),
+    ggplot(data, aes(temp)) + geom_histogram() + labs (x = "temperature",
+          y = "frequency")+ theme_bw(),
+    ggplot(data, aes(atemp)) + geom_histogram() + labs (x = "feeling temperature",
+          y = "frequency")+ theme_bw(),
+    ggplot(data, aes(hum)) + geom_histogram() + labs (x = "humidity",
+          y = "frequency")+ theme_bw(),
+    ggplot(data, aes(windspeed)) + geom_histogram() + labs (x = "wind speed",
+          y = "frequency")+ theme_bw()
 )
 ```
 
-The graphs reveal the following:
+The histogram of number of bike rental reveals that lower numbers of rentals are much more frequent, with no (or little to no) bikes being rented being the most frequent state. Based on the graph used to create day segments, we are fairly certrain that this distribution would look differently for the different segments and majority of the low number of rentals occur in the night. 
 
--   The first graph confirms the missing records in some `hr` categories. We suspect that this could be caused by data cleaning of the author of the dataset, since the night hours are likely to have no rentals. Alternatively, maybe the bike rental company was not operating during those low traffic hours for reasons that could include lack of night workers or updates in the system. Lastly, we considered time changes, however, those would only impact the records of one of the hours. Nevertheless, the difference should not impact the final results of our analysis. 
--   Occurrence gap in `windspeed` distribution.
--   Category 4 of `weathersit` is barely present. (categorical outlier)
+The hour graph confirms the missing records in some `hr` categories. We suspect that this could be caused by data cleaning of the author of the dataset, since the night hours are likely to have no rentals. Alternatively, maybe the bike rental company was not operating during those low traffic hours for reasons that could include lack of night workers or updates in the system. Lastly, we considered time changes, however, those would only impact the records of one of the hours. Nevertheless, the difference should not impact the final results of our analysis. 
+
+The weather phenomena histograms reveals that the 4th category, the harshest weather phenomena, is barely present. If we use it in our model the category would be a categorical outlier and needs to be addressed. 
+
+The distribution of temperature and feeling temperature is quite normal. However, both humidity and wind speed have a number of "0" values that are disjointed from the rest of the data. They may constitute possible outliers and we will look at them closer in the next section. 
 
 ## Outliers {.tabset}
 
