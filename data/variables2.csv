@@ -1,9 +1,12 @@
 Role;Variable;Name;Type;Characteristics
-Outcome;Number of rentals;cnt;Continuous;
+Outcome component;Number of non-subscribed rentals;casual;Continuous;
+Outcome component;Number of subcribed rentals;registered;Continuous;
+Outcome component;Number of total rentals;cnt;Continuous;
+Predictor;Working day indicator; workingday;Categorical;Binary, 1 for working days
 Predictor;Temperature ;temp;Continuous;Normalized 0-1 originally in Celsius
 Predictor;Feeling temperature;atemp;Continuous;Normalized 0-1 originally in Celsius
 Predictor;Humidity;hum;Continuous;Normalized 0-1
 Predictor;Wind speed;windspeed;Continuous;Normalized 0-1
 Predictor;Weather phenomena;weathersit;Categorical; 4 categories, with 4 being the "worst" weather conditions
-Control / Data processing;Hour ;hr;Categorical ;Categories 0 to 23
-Control / Data processing;Date;dteday;Character;YYYY-MM-DD format
+Data processing;Hour ;hr;Categorical ;Categories 0 to 23
+Data processing;Date;dteday;Character;YYYY-MM-DD format
