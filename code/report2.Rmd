@@ -413,6 +413,30 @@ comp_df <- data.frame(
 comp_df
 ```
 
+# Assumptions
+
+## Binary dependent variable & balanced outcomes
+Check whether the outcome variable is biary. Moreover, the minority and majority class should be somewhat balanced.
+```{r check binary outcome}
+data %>%
+  count(more_registered) %>%
+  mutate(prop = round(n / sum(n), 2))
+```
+
+## Sufficient sample size
+Using the proportion of the minority class, obtained from previous table, we can calculate the minimal amount of positive cases necessary for this assumption to hold.
+```{r check sample size}
+minimum_positive_cases <- function(k, p) {
+  round((10 * k) / p)
+}
+
+minimum_positive_cases(4, 0.43)
+```
+
+## Full-rank predictor matrix
+
+
+
 # References {#ref}
 
 <div id="refs"></div>
