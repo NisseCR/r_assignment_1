@@ -128,7 +128,7 @@ However, 24 dummy codes is too much for substantive interpretation. Thus, we dec
 This section describes the process of creating new variables that will be later used to aggregate the data into segments. The aggregation process is described in [Data Aggregation](#agg).
 
 ### Create outcome variable
-By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals of the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`, which indicates whether the proportion of subscribed rentals is higher than usual.
+By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals of the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`.
 
 ```{r create outcome variable}
 # Create binary variable, returning true if proportion is higher than respective mean.
@@ -189,20 +189,16 @@ Since the summaries are not giving a precise enough picture, we histograms of th
 
 ```{r distributions, echo=FALSE, message=FALSE}
 grid.arrange(
-  ggplot(data, aes(cnt)) + geom_histogram() +
-    labs (x = "Number of total bike rentals", y = "Frequency") + theme_bw(),
-  ggplot(data, aes(casual)) + geom_histogram() + 
-    labs (x = "Number of non-subscribed bike rentals", y = "Frequency") + theme_bw(),
-  ggplot(data, aes(registered)) + geom_histogram() +
-    labs (x = "Number of subscribed bike rentals", y = "Frequency") + theme_bw(),
-  ggplot(source_data, aes(temp)) + geom_histogram() + 
-    labs (x = "Temperature", y = "Frequency")+ theme_bw(),
-  ggplot(data, aes(atemp)) + geom_histogram() + 
-    labs (x = "Feeling temperature", y = "Frequency")+ theme_bw(),
-  ggplot(data, aes(hum)) + geom_histogram() + 
-    labs (x = "Humidity", y = "Frequency")+ theme_bw(),
-  ggplot(data, aes(windspeed)) + geom_histogram() +
-    labs (x = "Wind speed", y = "Frequency")+ theme_bw()
+    ggplot(data, aes(cnt)) + geom_histogram() + labs (x = "Number of bike rentals",
+          y = "Frequency") + theme_bw(),
+    ggplot(source_data, aes(temp)) + geom_histogram() + labs (x = "Temperature",
+          y = "Frequency")+ theme_bw(),
+    ggplot(data, aes(atemp)) + geom_histogram() + labs (x = "Feeling temperature",
+          y = "Frequency")+ theme_bw(),
+    ggplot(data, aes(hum)) + geom_histogram() + labs (x = "Humidity",
+          y = "Frequency")+ theme_bw(),
+    ggplot(data, aes(windspeed)) + geom_histogram() + labs (x = "Wind speed",
+          y = "Frequency")+ theme_bw()
 )
 ```
 
@@ -330,7 +326,6 @@ The majority of the missing records seems to be concentrated on just four days. 
 ## Relations
 ```{r predictor vs. outcome}
 ggplot(data, aes(workingday)) +
-<<<<<<< HEAD
   geom_bar(aes(fill = workingday))
 
 ggplot(data, aes(hum)) +
@@ -348,25 +343,6 @@ ggplot(data, aes(windspeed)) +
 ggplot(data, aes(weathersit)) +
   geom_bar(aes(fill = workingday)) +
   facet_wrap(~ workingday)
-=======
-  geom_bar(aes(fill = more_registered))
-
-ggplot(data, aes(hum)) +
-  geom_histogram(aes(fill = more_registered)) +
-  facet_wrap(~ more_registered)
-
-ggplot(data, aes(temp)) +
-  geom_histogram(aes(fill = more_registered)) +
-  facet_wrap(~ more_registered)
-
-ggplot(data, aes(windspeed)) +
-  geom_histogram(aes(fill = more_registered)) +
-  facet_wrap(~ more_registered)
-
-ggplot(data, aes(weathersit)) +
-  geom_bar(aes(fill = more_registered)) +
-  facet_wrap(~ more_registered)
->>>>>>> a1fec2b590a284e79b90c184e56d4221b02d06ce
 ```
 
 # Model creation & comparison
@@ -376,7 +352,7 @@ model2 <- glm(more_registered ~ workingday + temp, family = binomial, data)
 model3 <- glm(more_registered ~ workingday + temp + hum, family = binomial, data)
 model4 <- glm(more_registered ~ workingday + temp + hum + windspeed, family = binomial, data)
 model5 <- glm(more_registered ~ workingday + temp + hum + windspeed + weathersit, family = binomial, data)
-model6 <- glm(more_registered ~ workingday * (windspeed + temp + hum) + weathersit, family = binomial, data)
+model6 <- glm(more_registered ~ workingday*(windspeed + temp + hum) + weathersit, family = binomial, data)
 ```
 
 ```{r model comparison}
@@ -392,9 +368,16 @@ comp_df
 ```
 
 # Assumptions
+## Full-rank predictor matrix
+
+```{r}
+vif(model5)
+vif(model6, type = 'predictor')
+```
+Working day as a moderator seems to be CRINGE. We want no CRINGE. Begone, working day (moderator). From now on, we will be working with model5.
 
 ## Binary dependent variable & balanced outcomes
-Check whether the outcome variable is biary. Moreover, the minority and majority class should be somewhat balanced.
+Check whether the outcome variable is binary. Moreover, the minority and majority class should be somewhat balanced.
 ```{r check binary outcome}
 data %>%
   count(more_registered) %>%
@@ -410,6 +393,7 @@ minimum_positive_cases <- function(k, p) {
 
 minimum_positive_cases(4, 0.43)
 ```
+
 
 ## Continuous predictors are linearly related to the logit(π)
 
