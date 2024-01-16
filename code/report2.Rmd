@@ -49,6 +49,7 @@ library(gridExtra, exclude="combine")
 library(lubridate)
 library(car)
 library(ICC)
+library(caret)
 ```
 
 ```{r read data  files}
@@ -482,6 +483,73 @@ ggplot(dr_data, aes(x = eta, y = residuals)) +
 plot(model5, which = 1)
 ```
 
+# Interpretation of final model
+
+Based on the model comparision earlier, we chose model 6, which is represented by the following formula:$$
+    logit(\hat{\pi}) = \hat{\beta_0} +  \hat{\beta_1}workingday + \hat{\beta_2} windspeed + \hat{\beta_3} temp + \hat{\beta_4} hum + \hat{\beta_5} workingday * windspeed + $$
+    $$ +\hat{\beta_6} whethersit2 + \hat{\beta_7}whethersit3 + \hat{\beta_8} workingday * temp + \hat{\beta_9} workingday * hum
+    $$
+
+## Quality of the model
+
+```{r}
+summary(model6)
+```
+
+Interpret: 
+- is the model significant
+- is each predictor significant + interpretation of it's effect
+
+Quality of the model - ROC curve
+
+## Classification Performance
+
+For classification purposes use a threshold of 0.5, as in if the probability of the proportion of registered users is higher than average is 50% then the case is classified as a "success". We decided to use the standard 0.5 threshold because we did not find any substantial reason to justifying changing it to a different value. 
+
+```{r confusion matrix}
+# to create a confusion matrix we require a variable that informs us if the model classifies a given 
+data <- data %>%
+mutate(piHat = predict(model6, type = "response"),
+yHat = as.factor(ifelse(piHat <= 0.5, "0", "1"))
+)
+
+#creating the confusion matrix 
+cMat <- confusionMatrix(data = data$yHat, reference = data$more_registered)
+cMat$table
+
+# extracting the Accuracy and other classification statistics for the overall model
+cMat$overall 
+# extracting the Accuracy and other classification statistics for Positive and Negative prediction
+cMat$byClass
+
+```
+### Summary of the confusion matrix
+Based on the output above we find the following characteristics of our model: 
+```{r table_prediction_statistics, echo = FALSE}
+
+# We decided to present the most important predicting characteristics of our model (Accuracy, Sensitivity etc) in a form of a table. This code creates this table
+
+summary_confmatrix <- data.frame(
+  Measure = c('Accuracy', 'Error Rate', 'Sensitivity', 'Specificity', 'False Positive Rate', 'Positive Predictive Value', 'Negative Predictive Value'),
+  Value = c(round(cMat$overall[1], digits = 3), round((1585 + 2988)/ ( 1585 + 2988 + 4509 + 8297), digits = 3), round(cMat$byClass[1], digits = 3), round(cMat$byClass[2], digits = 3), round(2988 / (5409 + 2988), digits = 3), round(8297 / (8297 + 2988), digits = 3), round(5409 / (5409 + 1585), digits = 3)),
+  Interpretation = c('% correctly classified', '% incorrectly classified', '% of cases with registered rentals ratio being above average that are correctly classified', '% of cases with registered rentals ratio being below average that are correctly classified', '% of  cases with registered rentals ratio being below are incorrectly classified as more than average', '% chance that a case classified as above average was classified correctly', '% chance that a case classified as below average was classified correctly'),
+  Formula = c('(TP + TN)/ (P + N)', '(FP + FN)/ (P + N)', 'TP / (TP + FN)', 'TN / (TN + FP)', 'FP / (TN + FP)', 'TP / (TP + FP)', 'TN / (TN + FN)')
+)
+
+summary_confmatrix %>% 
+  kable()%>%
+  kable_styling()
+```
+
+
+## Intercept
+
+## Significance of predictors
+
+## Interpretation of coefficents 
+- invert the coefficents to exponential
+
+## Answering the research question
 
 
 # References {#ref}
