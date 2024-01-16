@@ -128,7 +128,7 @@ However, 24 dummy codes is too much for substantive interpretation. Thus, we dec
 This section describes the process of creating new variables that will be later used to aggregate the data into segments. The aggregation process is described in [Data Aggregation](#agg).
 
 ### Create outcome variable
-By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals of the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`.
+By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals of the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`, which indicates whether the proportion of subscribed rentals is higher than usual.
 
 ```{r create outcome variable}
 # Create binary variable, returning true if proportion is higher than respective mean.
@@ -189,16 +189,20 @@ Since the summaries are not giving a precise enough picture, we histograms of th
 
 ```{r distributions, echo=FALSE, message=FALSE}
 grid.arrange(
-    ggplot(data, aes(cnt)) + geom_histogram() + labs (x = "Number of bike rentals",
-          y = "Frequency") + theme_bw(),
-    ggplot(source_data, aes(temp)) + geom_histogram() + labs (x = "Temperature",
-          y = "Frequency")+ theme_bw(),
-    ggplot(data, aes(atemp)) + geom_histogram() + labs (x = "Feeling temperature",
-          y = "Frequency")+ theme_bw(),
-    ggplot(data, aes(hum)) + geom_histogram() + labs (x = "Humidity",
-          y = "Frequency")+ theme_bw(),
-    ggplot(data, aes(windspeed)) + geom_histogram() + labs (x = "Wind speed",
-          y = "Frequency")+ theme_bw()
+  ggplot(data, aes(cnt)) + geom_histogram() +
+    labs (x = "Number of total bike rentals", y = "Frequency") + theme_bw(),
+  ggplot(data, aes(casual)) + geom_histogram() + 
+    labs (x = "Number of non-subscribed bike rentals", y = "Frequency") + theme_bw(),
+  ggplot(data, aes(registered)) + geom_histogram() +
+    labs (x = "Number of subscribed bike rentals", y = "Frequency") + theme_bw(),
+  ggplot(source_data, aes(temp)) + geom_histogram() + 
+    labs (x = "Temperature", y = "Frequency")+ theme_bw(),
+  ggplot(data, aes(atemp)) + geom_histogram() + 
+    labs (x = "Feeling temperature", y = "Frequency")+ theme_bw(),
+  ggplot(data, aes(hum)) + geom_histogram() + 
+    labs (x = "Humidity", y = "Frequency")+ theme_bw(),
+  ggplot(data, aes(windspeed)) + geom_histogram() +
+    labs (x = "Wind speed", y = "Frequency")+ theme_bw()
 )
 ```
 
@@ -326,6 +330,7 @@ The majority of the missing records seems to be concentrated on just four days. 
 ## Relations
 ```{r predictor vs. outcome}
 ggplot(data, aes(workingday)) +
+<<<<<<< HEAD
   geom_bar(aes(fill = workingday))
 
 ggplot(data, aes(hum)) +
@@ -343,6 +348,25 @@ ggplot(data, aes(windspeed)) +
 ggplot(data, aes(weathersit)) +
   geom_bar(aes(fill = workingday)) +
   facet_wrap(~ workingday)
+=======
+  geom_bar(aes(fill = more_registered))
+
+ggplot(data, aes(hum)) +
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
+
+ggplot(data, aes(temp)) +
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
+
+ggplot(data, aes(windspeed)) +
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
+
+ggplot(data, aes(weathersit)) +
+  geom_bar(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
+>>>>>>> a1fec2b590a284e79b90c184e56d4221b02d06ce
 ```
 
 # Model creation & comparison
@@ -352,15 +376,16 @@ model2 <- glm(more_registered ~ workingday + temp, family = binomial, data)
 model3 <- glm(more_registered ~ workingday + temp + hum, family = binomial, data)
 model4 <- glm(more_registered ~ workingday + temp + hum + windspeed, family = binomial, data)
 model5 <- glm(more_registered ~ workingday + temp + hum + windspeed + weathersit, family = binomial, data)
+model6 <- glm(more_registered ~ workingday * (windspeed + temp + hum) + weathersit, family = binomial, data)
 ```
 
 ```{r model comparison}
 comp_df <- data.frame(
-  model = c('model1', 'model2', 'model3', 'model4', 'model5'),
-  predictors = c('workingday', 'workingday + temp', 'workingday + temp + hum', 'workingday + temp + hum + windspeed', 'workingday + temp + hum + windspeed + weathersit'),
-  moderator = c('', '', '', '', ''),
-  AIC = c(AIC(model1), AIC(model2), AIC(model3), AIC(model4), AIC(model5)),
-  BIC = c(BIC(model1), BIC(model2), BIC(model3), BIC(model4), BIC(model5))
+  model = c('model1', 'model2', 'model3', 'model4', 'model5', 'model6'),
+  predictors = c('workingday', 'workingday + temp', 'workingday + temp + hum', 'workingday + temp + hum + windspeed', 'workingday + temp + hum + windspeed + weathersit', 'workingday + temp + hum + windspeed + weathersit'),
+  moderator = c('', '', '', '', '', 'workingday'),
+  AIC = c(AIC(model1), AIC(model2), AIC(model3), AIC(model4), AIC(model5), AIC(model6)),
+  BIC = c(BIC(model1), BIC(model2), BIC(model3), BIC(model4), BIC(model5), BIC(model6))
 )
 
 comp_df
@@ -386,7 +411,49 @@ minimum_positive_cases <- function(k, p) {
 minimum_positive_cases(4, 0.43)
 ```
 
-## Full-rank predictor matrix
+## Continuous predictors are linearly related to the logit(π)
+
+```{r}
+data$logit <- predict(model5, type = "link")
+
+data %>%
+  ggplot(aes(temp, logit)) +
+  geom_point() +
+  geom_smooth(method = "glm")
+
+data %>%
+  ggplot(aes(hum, logit)) +
+  geom_point() +
+  geom_smooth(method = "glm")
+
+data %>%
+  ggplot(aes(windspeed, logit)) +
+  geom_point() +
+  geom_smooth(method = "glm")
+```
+
+
+## Influential schmimfluential
+
+```{r}
+plot(model5, which = c(4, 5))
+```
+
+## Deviance residuals
+
+```{r}
+dr <- resid(model5, type = "deviance")
+
+eta <- predict(model5, type = "link")
+
+dr_data <- data.frame(residuals = dr, eta = eta)
+
+ggplot(dr_data, aes(x = eta, y = residuals)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "glm")
+
+plot(model5, which = 1)
+```
 
 
 
