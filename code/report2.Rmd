@@ -173,53 +173,6 @@ data <- data %>%
 n_days <- n_distinct(data$dteday)
 ```
 
-### Clustering of `hr` categories {#clus}
-We create a new variable `hr_seg` that maps each data point to a certain segment of the day (e.g. night, evening).
-```{r hour clustering}
-# Shift the `hr` data by 2 and increment the hour 23 for easier binning via the cut function.
-data <- data %>%
-  mutate(hr_idx = hr + 2)
-
-data$hr_idx[data$hr == 23] <- 1
-
-# Cut the 24 hour entries in 3 categories.
-data <- data %>%
-  mutate(hr_seg = cut(
-    hr_idx,
-    breaks = c(0, 8, 16, 24),
-    labels = c("night", "morning-noon", "eve")
-  ))
-```
-
-After creating the categories, we check whether segmenting of `hr` was applied correctly by looking at single day data:
-
-```{r validate clustering}
-# Check output for single day.
-data %>%
-  filter(dteday == "2011-01-01") %>%
-  arrange(hr) %>%
-  select(hr, hr_seg) %>%
-  head(24)
-```
-
-The segments were chosen based on distribution of rental counts in given hours. Additionally, we wanted the segments to be of equal size to ensure all hours are equally represented in the model. Below we present one of the graphs we used to make the decision. 
-
-```{r reflect clustering, message=FALSE, echo=FALSE}
-
-# Plot hr~cnt with current segmentation indicator.
-data %>%
-  group_by(hr, hr_seg) %>%
-  summarise(
-    cnt = sum(cnt)
-  ) %>%
-  ggplot(aes(hr, cnt, fill = hr_seg)) +
-    geom_bar(stat = "identity") +
-    labs (x = "Hour (0 represents 1 am)",
-          y = "Sum of rentals in 2011 and 2012",
-          title = "Distribution of bike rentals throughout the day") +
-  theme_bw()
-```
-
 ## Descriptive Statistics
 
 We obtained the descriptive statistics of our variables. 
@@ -377,23 +330,23 @@ The majority of the missing records seems to be concentrated on just four days. 
 ## Relations
 ```{r predictor vs. outcome}
 ggplot(data, aes(workingday)) +
-  geom_bar(aes(fill = outcome))
+  geom_bar(aes(fill = more_registered))
 
 ggplot(data, aes(hum)) +
-  geom_histogram(aes(fill = outcome)) +
-  facet_wrap(~ outcome)
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
 
 ggplot(data, aes(temp)) +
-  geom_histogram(aes(fill = outcome)) +
-  facet_wrap(~ outcome)
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
 
 ggplot(data, aes(windspeed)) +
-  geom_histogram(aes(fill = outcome)) +
-  facet_wrap(~ outcome)
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
 
 ggplot(data, aes(weathersit)) +
-  geom_bar(aes(fill = outcome)) +
-  facet_wrap(~ outcome)
+  geom_bar(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
 ```
 
 # Model creation & comparison
@@ -403,15 +356,16 @@ model2 <- glm(more_registered ~ workingday + temp, family = binomial, data)
 model3 <- glm(more_registered ~ workingday + temp + hum, family = binomial, data)
 model4 <- glm(more_registered ~ workingday + temp + hum + windspeed, family = binomial, data)
 model5 <- glm(more_registered ~ workingday + temp + hum + windspeed + weathersit, family = binomial, data)
+model6 <- glm(more_registered ~ workingday * (windspeed + temp + hum) + weathersit, family = binomial, data)
 ```
 
 ```{r model comparison}
 comp_df <- data.frame(
-  model = c('model1', 'model2', 'model3', 'model4', 'model5'),
-  predictors = c('workingday', 'workingday + temp', 'workingday + temp + hum', 'workingday + temp + hum + windspeed', 'workingday + temp + hum + windspeed + weathersit'),
-  moderator = c('', '', '', '', ''),
-  AIC = c(AIC(model1), AIC(model2), AIC(model3), AIC(model4), AIC(model5)),
-  BIC = c(BIC(model1), BIC(model2), BIC(model3), BIC(model4), BIC(model5))
+  model = c('model1', 'model2', 'model3', 'model4', 'model5', 'model6'),
+  predictors = c('workingday', 'workingday + temp', 'workingday + temp + hum', 'workingday + temp + hum + windspeed', 'workingday + temp + hum + windspeed + weathersit', 'workingday + temp + hum + windspeed + weathersit'),
+  moderator = c('', '', '', '', '', 'workingday'),
+  AIC = c(AIC(model1), AIC(model2), AIC(model3), AIC(model4), AIC(model5), AIC(model6)),
+  BIC = c(BIC(model1), BIC(model2), BIC(model3), BIC(model4), BIC(model5), BIC(model6))
 )
 
 comp_df
@@ -437,7 +391,49 @@ minimum_positive_cases <- function(k, p) {
 minimum_positive_cases(4, 0.43)
 ```
 
-## Full-rank predictor matrix
+## Continuous predictors are linearly related to the logit(π)
+
+```{r}
+data$logit <- predict(model5, type = "link")
+
+data %>%
+  ggplot(aes(temp, logit)) +
+  geom_point() +
+  geom_smooth(method = "glm")
+
+data %>%
+  ggplot(aes(hum, logit)) +
+  geom_point() +
+  geom_smooth(method = "glm")
+
+data %>%
+  ggplot(aes(windspeed, logit)) +
+  geom_point() +
+  geom_smooth(method = "glm")
+```
+
+
+## Influential schmimfluential
+
+```{r}
+plot(model5, which = c(4, 5))
+```
+
+## Deviance residuals
+
+```{r}
+dr <- resid(model5, type = "deviance")
+
+eta <- predict(model5, type = "link")
+
+dr_data <- data.frame(residuals = dr, eta = eta)
+
+ggplot(dr_data, aes(x = eta, y = residuals)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "glm")
+
+plot(model5, which = 1)
+```
 
 
 
