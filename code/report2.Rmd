@@ -128,7 +128,7 @@ However, 24 dummy codes is too much for substantive interpretation. Thus, we dec
 This section describes the process of creating new variables that will be later used to aggregate the data into segments. The aggregation process is described in [Data Aggregation](#agg).
 
 ### Create outcome variable
-By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals of the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`.
+By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals of the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`, which indicates whether the proportion of subscribed rentals is higher than usual.
 
 ```{r create outcome variable}
 # Create binary variable, returning true if proportion is higher than respective mean.
@@ -236,16 +236,20 @@ Since the summaries are not giving a precise enough picture, we histograms of th
 
 ```{r distributions, echo=FALSE, message=FALSE}
 grid.arrange(
-    ggplot(data, aes(cnt)) + geom_histogram() + labs (x = "Number of bike rentals",
-          y = "Frequency") + theme_bw(),
-    ggplot(source_data, aes(temp)) + geom_histogram() + labs (x = "Temperature",
-          y = "Frequency")+ theme_bw(),
-    ggplot(data, aes(atemp)) + geom_histogram() + labs (x = "Feeling temperature",
-          y = "Frequency")+ theme_bw(),
-    ggplot(data, aes(hum)) + geom_histogram() + labs (x = "Humidity",
-          y = "Frequency")+ theme_bw(),
-    ggplot(data, aes(windspeed)) + geom_histogram() + labs (x = "Wind speed",
-          y = "Frequency")+ theme_bw()
+  ggplot(data, aes(cnt)) + geom_histogram() +
+    labs (x = "Number of total bike rentals", y = "Frequency") + theme_bw(),
+  ggplot(data, aes(casual)) + geom_histogram() + 
+    labs (x = "Number of non-subscribed bike rentals", y = "Frequency") + theme_bw(),
+  ggplot(data, aes(registered)) + geom_histogram() +
+    labs (x = "Number of subscribed bike rentals", y = "Frequency") + theme_bw(),
+  ggplot(source_data, aes(temp)) + geom_histogram() + 
+    labs (x = "Temperature", y = "Frequency")+ theme_bw(),
+  ggplot(data, aes(atemp)) + geom_histogram() + 
+    labs (x = "Feeling temperature", y = "Frequency")+ theme_bw(),
+  ggplot(data, aes(hum)) + geom_histogram() + 
+    labs (x = "Humidity", y = "Frequency")+ theme_bw(),
+  ggplot(data, aes(windspeed)) + geom_histogram() +
+    labs (x = "Wind speed", y = "Frequency")+ theme_bw()
 )
 ```
 
