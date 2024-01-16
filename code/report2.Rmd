@@ -94,7 +94,6 @@ variables <- variables[1:11, 1:5]
 variables %>% 
   kable()%>%
   kable_styling()
-
 ```
 The table above does not contain a raw outcome variable as of yet. Rather, three variables - namely `casual`, `registered` and `cnt` - are components that will be utilised when creating our outcome variable later on.
 
@@ -267,7 +266,14 @@ data %>%
   head()
 ```
 
-In fact, there are 22 hours in which the value is registered. Humidity of `0.00` is not possible in nature, which suggests that the values might be a mistake or a missing value. However, the values have been normalized and we do not know the specific method used. Thus, there is a significant possibility that the value `0.00` does not represent a true `0.00` humidity and is just the minimal value in the data. Since the number of these outliers is small and they could be real data, we chose to keep them.  
+In fact, there are 22 hours in which the value is registered. Humidity of `0.00` is not possible in nature, which suggests that the values might be a mistake or a missing value. However, the values have been normalized and we do not know the specific method used. Thus, there is a significant possibility that the value `0.00` does not represent a true `0.00` humidity and is just the minimal value in the data. Since the number of these outliers is small and they could be real data, we chose to keep them.
+
+### Weathersit outliers
+Remove category 4.
+```{r weathersit 4 removal}
+data <- data %>%
+  filter(weathersit != 4)
+```
 
 ## Missing data
 
@@ -375,6 +381,43 @@ vif(model5)
 vif(model6, type = 'predictor')
 ```
 Working day as a moderator seems to be CRINGE. We want no CRINGE. Begone, working day (moderator). From now on, we will be working with model5.
+
+## Data transformation
+Apply mean-centering as a default for introducing possible interaction terms.
+
+Mean centering does not influence interaction term, neither does it change the model statistics [@mean]
+```{r apply mean-centering}
+# Mean-centers the data without applying scaling.
+center_scale <- function(x) {
+    scale(x, scale = FALSE)
+}
+
+# Transform the data.
+data <- data %>%
+  mutate(across(where(is.numeric), center_scale))
+```
+
+## Remodelling
+```{r remodel creation}
+model1 <- glm(more_registered ~ workingday, family = binomial, data)
+model2 <- glm(more_registered ~ workingday + temp, family = binomial, data)
+model3 <- glm(more_registered ~ workingday + temp + hum, family = binomial, data)
+model4 <- glm(more_registered ~ workingday + temp + hum + windspeed, family = binomial, data)
+model5 <- glm(more_registered ~ workingday + temp + hum + windspeed + weathersit, family = binomial, data)
+model6 <- glm(more_registered ~ workingday*(windspeed + temp + hum) + weathersit, family = binomial, data)
+```
+
+```{r remodel comparison}
+comp_df <- data.frame(
+  model = c('model1', 'model2', 'model3', 'model4', 'model5', 'model6'),
+  predictors = c('workingday', 'workingday + temp', 'workingday + temp + hum', 'workingday + temp + hum + windspeed', 'workingday + temp + hum + windspeed + weathersit', 'workingday + temp + hum + windspeed + weathersit'),
+  moderator = c('', '', '', '', '', 'workingday'),
+  AIC = c(AIC(model1), AIC(model2), AIC(model3), AIC(model4), AIC(model5), AIC(model6)),
+  BIC = c(BIC(model1), BIC(model2), BIC(model3), BIC(model4), BIC(model5), BIC(model6))
+)
+
+comp_df
+```
 
 ## Binary dependent variable & balanced outcomes
 Check whether the outcome variable is binary. Moreover, the minority and majority class should be somewhat balanced.
