@@ -23,9 +23,13 @@ text-align: justify}
 
 "*Bikesharing contributes to the advent of more sustainable transportation in cities around the globe.*" [@beland]. Bikesharing programs are designed to provide short-term bicycle rental in stations dispersed throughout the cities and located near public transportation hubs [@beland]. They have numerous environmental and health benefits, such as reducing congestion, complementing other forms of public transportation and encouraging exercise [@beland]. Additionally, accessible bike rental has a lower barrier of entry than purchasing your own bike and is more convenient for out-of-town commuters.  
 
-In principle bicycles pose a good substitute for car use in urban areas, however, they have certain limitations. Among them is the exposure of cyclists to weather while commuting compared to other means of transportation. It would be intuitive for the number of bike rentals to be dependent on current weather conditions. If that is the case, the extent of that relationship would be important information for the bikesharing companies. Potentially, the information could be a factor in variety if business decisions, including level of pricing or supply for bikes in different seasons.   
+In principle bicycles pose a good substitute for car use in urban areas, however, they have certain limitations. Among them is the exposure of cyclists to weather while commuting compared to other means of transportation. It would be intuitive for the number of bike rentals to be dependent on current weather conditions. If that is the case, the extent of that relationship would be important information for the bikesharing companies. Potentially, the information could be a factor in variety if business decisions, including level of pricing or supply for bikes in different seasons. Also, bike rental companies might want to know what target group to advertise to. Maybe they can attract casual users to rent their bikes more often, or maybe they want to instead appeal to casual users to become registered users sooner.
 
-Considering these possible applications, this report will attempt to answer: **To what extent can weather data predict the number of bike rentals in different parts of the day?** Weather data is understood in terms of temperature, wind speed, humidity and occurrence of weather phenomena (including storms, snow and rain). 
+Considering these possible applications, this report will attempt to answer: **To what extent can weather data predict the likelihood for the ratio of the usage of bike of registered users to casual users to increase past its average, and is this effect different for working days than for weekend days?** Weather data is understood in terms of temperature, wind speed, humidity and occurrence of weather phenomena (including storms, snow and rain).
+
+This research question sounds a bit complicated, so let us elaborate.
+First of all, why not just try to find out if we can predict the likelihood if, in any condition, a registered user is more likely to use a bike, than a casual user? There is a fundamental problem with phrasing the research question like this; what if, by default, a large proportion of the bike rentals are done by registered users in the first place? Instead, we calculate the overall average proportion of registered to casual users, in order to establish a starting point for the analysis. Then, we see if there are any conditions under which this proportion is likely to skew towards registered users.
+Then, we predict that this effect is moderated by whether it is a working day, or a weekend day. After all, a registered user might feel more inclined to make use of their subscription when going to work, even when the weather is bad, whereas a non-registered user might instead opt to use public transport, or other forms of transport.
 
 ---
 # Dataset
@@ -122,14 +126,10 @@ data <- data %>%
 ```
 
 ## Creating Additional Variables {.tabset}
-We decided that including a time component in our final model is essential. Night hours are approximately half of the data and are characterized by much lower rental counts than the daylight values. Without separating the night data the predictors we expected the predicted rentals during the more active periods to be underestimated. However, we are interested in modeling rental values for the entire day. Thus, we do want to include the hours as a categorical predictor to be able to control the night and day periods. 
-
-However, 24 dummy codes is too much for substantive interpretation. Thus, we decided to aggregate the hourly data into 3 day segments night (23-6), morning-noon(7-14) and eve (15-22). The decision to divide into these categories was made by looking at the distribution of the rental counts at specific hours. We noticed a natural division into these 3 segments. Dividing the time in these periods would potentially solve the problem of interpreting dummy encodings and clusters of  low-night and high-day rentals being incorrectly estimated.
-
-This section describes the process of creating new variables that will be later used to aggregate the data into segments. The aggregation process is described in [Data Aggregation](#agg).
+This section describes the process of creating new variables that are either necessary for EDA, or form the outcome variable for our logistic model.
 
 ### Create outcome variable
-By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals of the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`.
+By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals compared to the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`.
 
 ```{r create outcome variable}
 # Create binary variable, returning true if proportion is higher than respective mean.
@@ -182,14 +182,16 @@ We obtained the descriptive statistics of our variables.
 summary(data)
 ```
 
-The most important information we obtained here is that the data contains `r n_days` unique days, meaning that the entirety of 2011 (365 days) and 2012 (366 days) was recorded. However, we note that there is approximately 100 less "night" hours in the dataset than the other two segments suggesting there might be some missing records.  
+The most important information we obtained here is that the data contains `r n_days` unique days, meaning that the entirety of 2011 (365 days) and 2012 (366 days) was recorded. However, we note that some `hr` categories occur less often than others within the dataset.
 
 ## Distributions {#dists}
 
 Since the summaries are not giving a precise enough picture, we histograms of the variables.
 
 ```{r distributions, echo=FALSE, message=FALSE}
-grid.arrange(
+grid.arrange(ncol = 3,
+    ggplot(data, aes(registered_prop)) + geom_histogram() + 
+      labs (x = "Registered proportion", y = "Frequency") + theme_bw(),
     ggplot(data, aes(cnt)) + geom_histogram() + 
       labs (x = "Bike rentals total", y = "Frequency") + theme_bw(),
     ggplot(data, aes(casual)) + geom_histogram() + 
@@ -205,7 +207,7 @@ grid.arrange(
     ggplot(data, aes(windspeed)) + geom_histogram() + labs (x = "Wind speed",
           y = "Frequency")+ theme_bw(),
     ggplot(data, aes(weathersit)) + geom_bar(stat = 'count')
-      + labs(x = "weathersit", y = "Frequency") + theme_bw()
+      + labs(x = "Weathersit", y = "Frequency") + theme_bw()
 )
 ```
 
