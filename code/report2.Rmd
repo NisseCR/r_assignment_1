@@ -480,7 +480,21 @@ comp_df <- data.frame(
 comp_df
 ```
 
+# Assumptions
+## Full-rank predictor matrix
+
+There need to be more observations, then there are predictors. That assumption is easily met; there are 17376 observations, but we are only making use of five predictors.
+
+Furthermore, the model should not suffer from multicollinearity. We appeal to the variance inflation factor, in order to check whether we are dealing with multicollinearity.
+
+```{r}
+vif(model6, type = 'predictor')
+```
+
+Originally, the VIF in model6 used to be too high to deal with (>10). After all, it makes sense that the interaction terms highly correlate with their respective variables. However, since we applied mean centering, the values are sufficient to continue with.
+
 ## Binary dependent variable & balanced outcomes
+
 Check whether the outcome variable is binary. Moreover, the minority and majority class should be somewhat balanced.
 ```{r check binary outcome}
 data %>%
@@ -488,7 +502,11 @@ data %>%
   mutate(prop = round(n / sum(n), 2))
 ```
 
+Of course, our outcome variable is binary.
+The balance between both classes looks quite nice. There are a little more data points in the second class, but nothing too egregious.
+
 ## Sufficient sample size
+
 Using the proportion of the minority class, obtained from previous table, we can calculate the minimal amount of positive cases necessary for this assumption to hold.
 ```{r check sample size}
 minimum_positive_cases <- function(k, p) {
@@ -498,11 +516,14 @@ minimum_positive_cases <- function(k, p) {
 minimum_positive_cases(4, 0.43)
 ```
 
+This assumption is easily met; there are 17376 observations.
 
 ## Continuous predictors are linearly related to the logit(π)
 
+A logistic regression assumes a linear relationship between the logit of the outcome, and the continuous predictor variables. 
+
 ```{r}
-data$logit <- predict(model5, type = "link")
+data$logit <- predict(model6, type = "link")
 
 data %>%
   ggplot(aes(temp, logit)) +
@@ -520,28 +541,37 @@ data %>%
   geom_smooth(method = "glm")
 ```
 
+All plots show a linear relationship.
 
-## Influential schmimfluential
+## Influential data points
+
+The model should not be biased due to extremely influential data points. We can measure Cook's distance, as well as plot a residuals vs leverage plot, to check whether this assumption is violated or not.
 
 ```{r}
-plot(model5, which = c(4, 5))
+plot(model6, which = c(4, 5))
 ```
+
+No points seem to fall outside of the thresholds for a too large Cook's distance, or influential leverage. 
 
 ## Deviance residuals
 
-```{r}
-dr <- resid(model5, type = "deviance")
+Technically, we don't need to check for deviance residuals as a core assumption for logistic regression. It is, however, a good way to check if the data points are fit well by the model.
 
-eta <- predict(model5, type = "link")
+```{r}
+dr <- resid(model6, type = "deviance")
+
+eta <- predict(model6, type = "link")
 
 dr_data <- data.frame(residuals = dr, eta = eta)
 
 ggplot(dr_data, aes(x = eta, y = residuals)) +
   geom_point() +
-  geom_smooth(se = FALSE, method = "glm")
+  geom_smooth(se = FALSE)
 
-plot(model5, which = 1)
+plot(model6, which = 1)
 ```
+
+Both regression lines should be roughly flat. Though for the first plot it seems to be a little off, nothing too violating seems to be going on. We consider these regression lines to be sufficient.
 
 # Interpretation of final model
 
