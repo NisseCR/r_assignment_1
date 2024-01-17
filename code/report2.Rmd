@@ -366,7 +366,7 @@ ggplot(data, aes(weathersit)) +
   facet_wrap(~ more_registered)
 ```
 
-# Model creation & comparison
+# Model selection - Phase 1 {#create_model}
 Our approach to modeling was to build up nested models using the step-up strategy [@Grace-Martin_2023] - starting with an empty intercept-model - and adding potential predictors in a step-wise manner. The order in which these predictors were added was based on the previous analysis done in [Relations](#relations), starting with variables that seemed to affect the outcome variable the most. From said analysis, we concluded that `workingday` had the strongest effect on our outcome variable - hence this was the first predictor that was to be added. Building on top of that, we added the remaining variables one by one in order of decreasing effect.  
 Logistic regression models do not have an $R^2$ statistic. Instead, we used the *residual deviance* $D$ in order to compare model fit improvement between models. The significance of this improvement was validated using *likelihood ratio tests* between two nested (adjacent) models. To also take into account the increase of model complexity when adding in predictors, we utilised the *AIC* and *BIC* measures in our comparison process.  
 A total of 6 non-moderated models were created, all of which were an improvement compared to their parent version. Consequently, model 5 (zero-based) was identified as our best model based on the *AIC*, *BIC* and $D$ statistics. This model includes all the weather predictors, as well as the `workingday` indicator.  
@@ -435,7 +435,7 @@ The anova tests show that each addition of a predictor resulted in a significant
 
 Thus, the final model we chose is model 6 - which includes the predictors `workinday`, `temp`, `hum`, `windspeed`, `weathersit` whilst also having a moderator `workinday` that effects the relation between our weather predictors and the outcome variable.
 
-# Assumptions
+# Assumptions - Phase 1
 ## Full-rank predictor matrix
 
 For this assumption to hold, there need to be more observations within the data set than predictors in the model. This assumption is easily met - there are 17376 observations, whilst the model uses 8 predictors.  
@@ -449,10 +449,9 @@ vif(model6)
 From this we can conclude that the interaction terms between our moderator and weather predictors show severe multicollinearity, as is indicated by the GFIV values surpassing the $> 10$ threshold. Although this supposedly violates the assumption, it is worth to consider that it makes sense that the interaction terms highly correlate with their respective variables [@interaction].  
 To combat the issue of supposed multicollinearity according to the *VIF* values, we chose to mean-center our data [@wiley]. Mean-centering makes no practical difference as to what the regression equation conveys (including the interaction term), moreover it has no effect on model statistics [@gurnsey]. That said, the interpretation of our conditionals changes - as other variables are considered to be their mean value rather than `0`.
 
+# Model selection - Phase 2
 ## Data transformation
-Apply mean-centering as a default for introducing possible interaction terms.
-
-Mean centering does not influence interaction term, neither does it change the model statistics [@mean]
+We apply mean-centering as a default solution to  the high *VIF* values for our interaction terms. The transformation is done only on our continuous variables.
 ```{r apply mean-centering}
 # Mean-centers the data without applying scaling.
 center_scale <- function(x) {
@@ -462,8 +461,39 @@ center_scale <- function(x) {
 # Transform the data.
 data <- data %>%
   mutate(across(where(is.numeric), center_scale))
+
+# Inspect the data
+summary(data)
+```
+Inspecting the transformed data, we can see that the mean values of the continuous variables sit at `0`, whilst their min-max range stays the same as a consequence of not scaling the data.
+
+## Remodel with transformation
+Using the updated data, we recreate the same sequence of nested models
+```{r remodel creation}
+# Create logistic models.
+model0 <- glm(more_registered ~ 1, family = binomial, data)
+model1 <- glm(more_registered ~ workingday, family = binomial, data)
+model2 <- glm(more_registered ~ workingday + temp, family = binomial, data)
+model3 <- glm(more_registered ~ workingday + temp + hum, family = binomial, data)
+model4 <- glm(more_registered ~ workingday + temp + hum + windspeed, family = binomial, data)
+model5 <- glm(more_registered ~ workingday + temp + hum + windspeed + weathersit, family = binomial, data)
+
+# Add working day moderator on weather predictors.
+model6 <- glm(more_registered ~ workingday*(windspeed + temp + hum) + weathersit, family = binomial, data)
 ```
 
+We conducted thorough inspection in order to validate that the regression equation and comparison statistics (*AIC*, *BIC*, $D$) were unchanged as a result of the data transformation. Comparing the coefficients and the model statistics, we concluded that this was indeed the case. Due to this, a identical analysis was performed to select our best model - following the same steps as in our previous [model creation](#create_model). This once again resulted in model 6 to be our best fitted model, including the moderator `workinday` on our weather predictor variables.
+
+# Assumptions - Phase 2
+## Full-rank predictor matrix
+The amount of observations once again exceeds the amount of predictors in the model.
+
+To check for multicollinearity, we once more appeal to the variance inflation factor or *VIF*.
+
+```{r vif check 2, message = FALSE}
+vif(model6)
+```
+The *VIF* values all indicate an absence of severe multicollinearity. This now also holds for our interaction terms as a result of mean-centering our data.
 
 ## Binary dependent variable & balanced outcomes
 
