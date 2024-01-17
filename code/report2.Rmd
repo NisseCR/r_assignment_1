@@ -595,26 +595,23 @@ Both regression lines should be roughly flat. Though for the first plot it seems
 
 # Interpretation of final model
 
-Based on the model comparision earlier, we chose model 6, which is represented by the following formula:$$
+Based on the model comparison earlier, we chose model 6, which is represented by the following formula:$$
     logit(\hat{\pi}) = \hat{\beta_0} +  \hat{\beta_1}workingday + \hat{\beta_2} windspeed + \hat{\beta_3} temp + \hat{\beta_4} hum + \hat{\beta_5} workingday * windspeed + $$
     $$ +\hat{\beta_6} whethersit2 + \hat{\beta_7}whethersit3 + \hat{\beta_8} workingday * temp + \hat{\beta_9} workingday * hum
     $$
+The model includes workingday as a categorical moderator of windspeed, temperature and humidity. Additionally, class 1, which represents the lightest wheather phenonena is the reference category for weathersit and a weekend day is the reference for workingday. Lastly, in this final model the means of the predictors are centered. 
 
-## Quality of the model
+Below we present the model summary:
 
-```{r}
+```{r model6_summary}
 summary(model6)
 ```
 
-Interpret: 
-- is the model significant
-- is each predictor significant + interpretation of it's effect
+## Quality of the model
 
-Quality of the model - ROC curve
+### Classification Performance
 
-## Classification Performance
-
-For classification purposes use a threshold of 0.5, as in if the probability of the proportion of registered users is higher than average is 50% then the case is classified as a "success". We decided to use the standard 0.5 threshold because we did not find any substantial reason to justifying changing it to a different value. 
+Model quality for logistic regression can be assessed based on how well does the model classify cases as successes and failures. For classification testing of our model we used a confusion matrix. To produce one, the model has to classify each case based on the probability it is a success. We decided to use a threshold of 0.5, as in: if the probability of the proportion of registered users is higher than average is 50% then the case is classified as a "success". We decided to use the standard 0.5 threshold because we did not find any substantial reason to justifying changing it to a different value. 
 
 ```{r confusion matrix}
 # to create a confusion matrix we require a variable that informs us if the model classifies a given 
@@ -625,23 +622,18 @@ yHat = as.factor(ifelse(piHat <= 0.5, "0", "1"))
 
 #creating the confusion matrix 
 cMat <- confusionMatrix(data = data$yHat, reference = data$more_registered)
+
 cMat$table
-
-# extracting the Accuracy and other classification statistics for the overall model
-cMat$overall 
-# extracting the Accuracy and other classification statistics for Positive and Negative prediction
-cMat$byClass
-
 ```
-### Summary of the confusion matrix
-Based on the output above we find the following characteristics of our model: 
+
+Based on the confusion matrix we find the following characteristics of our model: 
 ```{r table_prediction_statistics, echo = FALSE}
 
 # We decided to present the most important predicting characteristics of our model (Accuracy, Sensitivity etc) in a form of a table. This code creates this table
 
 summary_confmatrix <- data.frame(
   Measure = c('Accuracy', 'Error Rate', 'Sensitivity', 'Specificity', 'False Positive Rate', 'Positive Predictive Value', 'Negative Predictive Value'),
-  Value = c(round(cMat$overall[1], digits = 3), round((1585 + 2988)/ ( 1585 + 2988 + 4509 + 8297), digits = 3), round(cMat$byClass[1], digits = 3), round(cMat$byClass[2], digits = 3), round(2988 / (5409 + 2988), digits = 3), round(8297 / (8297 + 2988), digits = 3), round(5409 / (5409 + 1585), digits = 3)),
+  Value = c(round(cMat$overall[1], digits = 3), round((1585 + 2988)/ (1585 + 2988 + 4509 + 8297), digits = 3), round(cMat$byClass[1], digits = 3), round(cMat$byClass[2], digits = 3), round(2988 / (5409 + 2988), digits = 3), round(8297 / (8297 + 2988), digits = 3), round(5409 / (5409 + 1585), digits = 3)),
   Interpretation = c('% correctly classified', '% incorrectly classified', '% of cases with registered rentals ratio being above average that are correctly classified', '% of cases with registered rentals ratio being below average that are correctly classified', '% of  cases with registered rentals ratio being below are incorrectly classified as more than average', '% chance that a case classified as above average was classified correctly', '% chance that a case classified as below average was classified correctly'),
   Formula = c('(TP + TN)/ (P + N)', '(FP + FN)/ (P + N)', 'TP / (TP + FN)', 'TN / (TN + FP)', 'FP / (TN + FP)', 'TP / (TP + FP)', 'TN / (TN + FN)')
 )
@@ -651,15 +643,83 @@ summary_confmatrix %>%
   kable_styling()
 ```
 
+In the table we can see that the final model is fairly accurate (with accuracy at 73.7%). It is not particularly high, but considering our application people's behavior based on weather (both notoriously hard to predict) we deem it sufficient. Comparing sensitivity (60.1%) and specificity (84.0%) reveals that the model is better at identifying cases with below average registered rentals ratio than those above average. The same is revealed by the PPV (73.5%) and NPV (77.3%), though here the diffrence is smaller. 
 
-## Intercept
+Further characteristics of the model can be seen below:
+```{r further characteristics}
+cMat$overall
+cMat$byClass
+```
+
+
+### ROC curve
+
 
 ## Significance of predictors
+```{r coefficients_final_model}
+summary(model6)$coefficients
 
-## Interpretation of coefficents 
-- invert the coefficents to exponential
+```
+As can be seen above all of the predictor slopes, interaction terms and the intercept are significantly different from 0.
+
+## Interpretation of coefficents and the intercept
+
+To interpret the intercept and coefficients in more understandable units we convert them with an exponential function: 
+```{r exp_coefficients}
+# we transform the coefficients with the exponential function, so they can be interpreted as the odds ratio (not log of it)
+coef(model6) %>% exp()
+```
+
+It is important to note that the variables windspeed, temperature and humidity were standardized, thus a unit step in them is not expressed in any specific units (such as km/h) and a unit step increase represents a really big change in the variable value. Additionally, the continuous variables have been standardized, which changes the interpretation of the intercept and of partial effects. Lastly, the reference categories for wheathersit and workingday are weathersit = 1 (lightest weather phenomena) and a non-working day accordingly. 
+
+#### Intercept
+The intercept equals 0.302. Thus, the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is equal to 0.302 when wheathersit is equal to 1 (lightest wheather phenomena), it is a non-workingday and humidity, temperature and windspeed are at their mean value 
+
+#### Weekend and workingday
+The slope of workingday1 is equal to 8.356. Thus on a workingday the odds ratio of  the proportion of registered rental bikes being higher than average to lower than average is increases by 8.356 compared to a non-working day; if windspeed, temperature and humidity are equal to their mean value and 'wheathersit' is equal to 1.  
+
+#### Windspeed
+The slope of windspeed is equal to 3.277. This means that for a unit increase in windspeed the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is on average higher by 8.356 if temperature and humidity are at their mean value and 'workingday' and 'wheathersit' are equal to their reference categories. 
+
+#### Temperature
+The temperature's coefficient is equal to `r round( 3.263983e-04, digits = 3)`. This means that for a unit increase in temperature the odds ratio of the proportion of registered rental bikes being higher than average to lower than average changes on average by `r round( 3.263983e-04, digits = 3)`, if windspeed and humidity are at their mean value and 'workingday' and 'wheathersit' are equal to their reference categories. 
+
+#### Humidity 
+The humidity's coefficient is equal to 2.465. This means that for a unit increase in humidity the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is on average higher by 2.465; if windspeed and temperature are at their mean value and 'workingday' and 'wheathersit' are equal to their reference categories. 
+
+#### Weathersit
+'Weathersit' represents the categorical variable that indicates the severity of weather phenomena. As a reminder, the final categories of `weathersit` represent the following weather phenomena and their combinations:
+
+1.    Clear, Few clouds, Partly cloudy, Partly cloudy
+2.    Mist and Cloudy, Mist and Broken clouds, Mist and Few clouds, Mist
+3.    Light Snow, Light Rain and Thunderstorm and Scattered clouds, Light Rain and Scattered clouds
+
+The coefficients of weathersit2 (-0.139) and weathersit3 (0.230) represent the average diffrence in odds ratio between the reference  category (1) and categories 2 and 3 respectively, after controling for windspeed, temperature, humidity and workingday. 
+
+#### Interaction terms
+
+The interaction terms $\hat{\beta_7}$, $\hat{\beta_8}$ and $\hat{\beta_9}$ represent the moderation of weathersit on the effect of respectively windspeed, temperature and humidity on the odds ratio. Since they are significant that means that the effect of these continuous variables is different on a working day as opposed to the ones we analyzed above on a non-working day. 
+?
+```{r calculating_int_coeff, echo=FALSE}
+coeffwind <- 3.276739e+00 * 3.976885e-01
+coefftemp <-  3.263983e-04 * 3.490583e+01
+coeffhum <- 1.175950e+01 * 4.024118e-01
+```
+
+Thus, on a workingday a unit increase in windspeed leads to a `r round(coeffwind, digits = 3)` ($e^{\hat{\beta_2} + \hat{\beta_7}}$) change in the odds ratio, when 
+
+
+For unit increase in temperature on a workingday the average odds ratio increases by `r round(coefftemp, digits = 3)` ($e^{\hat{\beta_3} + \hat{\beta_8}}$)
+
+And lastly, for unit increase in humidity on a workingday the average odds ratio increases by `r round(coeffhum, digits = 3)` ($e^{\hat{\beta_4} + \hat{\beta_9}}$)
 
 ## Answering the research question
+
+
+
+
+
+
 
 
 # References {#ref}
