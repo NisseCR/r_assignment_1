@@ -112,6 +112,7 @@ The categories of `weathersit` represent the following weather phenomena and the
 Some of our categorical variables (i.e. `workingday`, `weathersit`, `hr`) are interpreted as integers rather than factors. We transform these data to factors for ease of processing and modeling.
 
 ```{r transform types}
+# Factorise columns
 data <- data %>%
   mutate(
     workingday = as.factor(workingday),
