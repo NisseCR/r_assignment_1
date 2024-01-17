@@ -344,55 +344,101 @@ head(missing_df, 10)
 
 The majority of the missing records seems to be concentrated on just four days. Particularly, on the `2012-10-29` and `2012-10-30` the records are missing for 36 consecutive hours, which suggests a system outage of the rental company or another similar disturbance to the measurement of the data. Since the number of missing records is small compared to the size of the dataset, we do not think they will impact our analysis.
 
-## Relations
+## Relations {#relations}
 ```{r predictor vs. outcome}
 ggplot(data, aes(workingday)) +
-  geom_bar(aes(fill = workingday))
+  geom_bar(aes(fill = more_registered))
 
 ggplot(data, aes(hum)) +
-  geom_histogram(aes(fill = workingday)) +
-  facet_wrap(~ workingday)
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
 
 ggplot(data, aes(temp)) +
-  geom_histogram(aes(fill = workingday)) +
-  facet_wrap(~ workingday)
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
 
 ggplot(data, aes(windspeed)) +
-  geom_histogram(aes(fill = workingday)) +
-  facet_wrap(~ workingday)
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
 
 ggplot(data, aes(weathersit)) +
-  geom_bar(aes(fill = workingday)) +
-  facet_wrap(~ workingday)
+  geom_bar(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
 ```
 
 # Model creation & comparison
+Our approach to modeling was to build up nested models using the step-up strategy [@Grace-Martin_2023] - starting with an empty intercept-model - and adding potential predictors in a step-wise manner. The order in which these predictors were added was based on the previous analysis done in [Relations](#relations), starting with variables that seemed to affect the outcome variable the most. From said analysis, we concluded that `workingday` had the strongest effect on our outcome variable - hence this was the first predictor that was to be added. Building on top of that, we added the remaining variables one by one in order of decreasing effect.  
+Logistic regression models do not have an $R^2$ statistic. Instead, we used the *residual deviance* $D$ in order to compare model fit improvement between models. The significance of this improvement was validated using *likelihood ratio tests* between two nested (adjacent) models. To also take into account the increase of model complexity when adding in predictors, we utilised the *AIC* and *BIC* measures in our comparison process.  
+A total of 6 non-moderated models were created, all of which were an improvement compared to their parent version. Consequently, model 5 (zero-based) was identified as our best model based on the *AIC*, *BIC* and $D$ statistics. This model includes all the weather predictors, as well as the `workingday` indicator.  
+Lastly, we checked whether `workinday` moderated the relation between our weather predictors and our outcome variable by creating our last model - model 6. We tested if adding the moderation was a significant improvement by once again comparing the *AIC* and *BIC* values between our moderator model and the "best model", whilst also performing a *likelihood ratio test* between the two.  
+
+The entirety of this process is reflected in the code below.  
+
+***
+
+We start by creating the models:
+
 ```{r model creation}
+# Create logistic models.
+model0 <- glm(more_registered ~ 1, family = binomial, data)
 model1 <- glm(more_registered ~ workingday, family = binomial, data)
 model2 <- glm(more_registered ~ workingday + temp, family = binomial, data)
 model3 <- glm(more_registered ~ workingday + temp + hum, family = binomial, data)
 model4 <- glm(more_registered ~ workingday + temp + hum + windspeed, family = binomial, data)
 model5 <- glm(more_registered ~ workingday + temp + hum + windspeed + weathersit, family = binomial, data)
+
+# Add working day moderator on weather predictors.
 model6 <- glm(more_registered ~ workingday*(windspeed + temp + hum) + weathersit, family = binomial, data)
 ```
 
+Having created the models, we can obtain the required comparison statistics and display them in a table:
+
 ```{r model comparison}
+# Obtain residual deviance statistic from model.
+RD <- function(model) {
+  summary(model)$deviance
+}
+
+# Create AIC, BIC and D table for all the models.
 comp_df <- data.frame(
-  model = c('model1', 'model2', 'model3', 'model4', 'model5', 'model6'),
-  predictors = c('workingday', 'workingday + temp', 'workingday + temp + hum', 'workingday + temp + hum + windspeed', 'workingday + temp + hum + windspeed + weathersit', 'workingday + temp + hum + windspeed + weathersit'),
-  moderator = c('', '', '', '', '', 'workingday'),
-  AIC = c(AIC(model1), AIC(model2), AIC(model3), AIC(model4), AIC(model5), AIC(model6)),
-  BIC = c(BIC(model1), BIC(model2), BIC(model3), BIC(model4), BIC(model5), BIC(model6))
+  model = c('model0', 'model1', 'model2', 'model3', 'model4', 'model5', 'model6'),
+  predictors = c('', 'workingday', 'workingday + temp', 'workingday + temp + hum', 'workingday + temp + hum + windspeed', 'workingday + temp + hum + windspeed + weathersit', 'workingday + temp + hum + windspeed + weathersit'),
+  moderator = c('', '', '', '', '', '', 'workingday'),
+  AIC = c(AIC(model0), AIC(model1), AIC(model2), AIC(model3), AIC(model4), AIC(model5), AIC(model6)),
+  BIC = c(BIC(model0), BIC(model1), BIC(model2), BIC(model3), BIC(model4), BIC(model5), BIC(model6)),
+  D = c(RD(model0), RD(model1), RD(model2), RD(model3), RD(model4), RD(model5), RD(model6))
 )
 
-comp_df
+comp_df %>% 
+  kable()%>%
+  kable_styling()
 ```
+
+Based on the model fit statistics in the table, we can conclude that model 5 is the non-moderated model with the lowest *AIC*, *BIC* and $D$ values. In fact, adding in predictors always showed a decrease in these values, albeit diminishing. The latter is especially true for the obtained decreases between model 3, 4 and 5 respectively.  
+The addition of the `workingday` moderator clearly improved the model, seeing how the decrease in *AIC*, *BIC* and $D$ values is proportionally large when comparing the improvement between 4 & 5 to 5 & 6.  
+
+Lastly, we perform *likelihood ratio tests* / *anova tests* in order to verify the significance of the $D$ value decreases:
+
+```{r model anova comparison}
+# Perform the likelihood ratio tests.
+anova(model0, model1, test = "LRT")
+anova(model1, model2, test = "LRT")
+anova(model2, model3, test = "LRT")
+anova(model3, model4, test = "LRT")
+anova(model4, model5, test = "LRT")
+anova(model5, model6, test = "LRT")
+```
+
+The anova tests show that each addition of a predictor resulted in a significant decrease of the *residual deviance*. This also holds for the addition for our moderator `workinday`.  
+
+***
+
+Thus, the final model we chose is model 6 - which includes the predictors `workinday`, `temp`, `hum`, `windspeed`, `weathersit` whilst also having a moderator `workinday` that effects the relation between our weather predictors and the outcome variable.
 
 # Assumptions
 ## Full-rank predictor matrix
 
 ```{r}
-vif(model5)
 vif(model6, type = 'predictor')
 ```
 Working day as a moderator seems to be CRINGE. We want no CRINGE. Begone, working day (moderator). From now on, we will be working with model5.
