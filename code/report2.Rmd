@@ -447,7 +447,7 @@ We appeal to the variance inflation factor or *VIF*, in order to check whether w
 vif(model6)
 ```
 From this we can conclude that the interaction terms between our moderator and weather predictors show severe multicollinearity, as is indicated by the GFIV values surpassing the $> 10$ threshold. Although this supposedly violates the assumption, it is worth to consider that it makes sense that the interaction terms highly correlate with their respective variables [@interaction].  
-To combat the issue of supposed multicollinearity according to the *VIF* values, we chose to mean-center our data [@wiley]. Mean-centering makes no practical difference as to what the regression equation conveys (including the interaction term), moreover it has no effect on model statistics [@gurnsey]. That said, the interpretation of our conditionals changes - as other variables are considered to be their mean value rather than `0`.
+To combat the issue of supposed multicollinearity according to the *VIF* values, we chose to mean-center our data [@wiley]. Mean-centering makes no practical difference as to what the regression equation conveys in moderation analysis, moreover it has no effect on model statistics [@gurnsey]. That said, the interpretation of our conditionals change - as other variables are considered to be their mean value rather than `0`.
 
 # Model selection - Phase 2
 ## Data transformation
@@ -482,34 +482,78 @@ model5 <- glm(more_registered ~ workingday + temp + hum + windspeed + weathersit
 model6 <- glm(more_registered ~ workingday*(windspeed + temp + hum) + weathersit, family = binomial, data)
 ```
 
-We conducted thorough inspection in order to validate that the regression equation and comparison statistics (*AIC*, *BIC*, $D$) were unchanged as a result of the data transformation. Comparing the coefficients and the model statistics, we concluded that this was indeed the case. Due to this, a identical analysis was performed to select our best model - following the same steps as in our previous [model creation](#create_model). This once again resulted in model 6 to be our best fitted model, including the moderator `workinday` on our weather predictor variables.
+We conducted thorough inspection in order to validate that the interaction terms and comparison statistics (*AIC*, *BIC*, $D$) were unchanged as a result of the data transformation. Comparing the coefficients and the model statistics, we concluded that this was indeed the case. Due to this, a identical analysis was performed to select our best model - following the same steps as in our previous [model creation](#create_model). This once again resulted in model 6 to be our best fitted model, including the moderator `workinday` on our weather predictor variables.
 
 # Assumptions - Phase 2
 ## Full-rank predictor matrix
-The amount of observations once again exceeds the amount of predictors in the model.
+The amount of observations again exceeds the number of predictors in the model.
 
 To check for multicollinearity, we once more appeal to the variance inflation factor or *VIF*.
 
 ```{r vif check 2, message = FALSE}
 vif(model6)
 ```
-The *VIF* values all indicate an absence of severe multicollinearity. This now also holds for our interaction terms as a result of mean-centering our data.
+The *VIF* values all predictor variables indicate an absence of severe multicollinearity. This now also holds for our interaction terms as a result of mean-centering our data.
 
-## Binary dependent variable & balanced outcomes
+## Linearity
+The assumption that the continuous predictors and the logit of the success probability should be linearly related, must hold. If the predictors show a non-linear relation, than the current model paradigm is not suited for the regression analysis.
 
-Check whether the outcome variable is binary. Moreover, the minority and majority class should be somewhat balanced.
+We first inspect whether the pearson residuals vs. the fitted  values show a linear relation:  
+
+```{r check linearity 1}
+plot(model6, 1)
+```
+
+This graph indeed suggests a linear relation.
+
+Since the `car` package does not support models with interaction terms, we were unable to utilise its partial residual plots feature. Therefore, we have opted to inspect the relation between the logit values and fitted values *per* predictor:
+
+```{r partial residual plots, message = FALSE}
+data$logit <- predict(model6, type = "link")
+
+data %>%
+  ggplot(aes(temp, logit)) +
+  geom_point() +
+  geom_smooth()
+
+data %>%
+  ggplot(aes(hum, logit)) +
+  geom_point() +
+  geom_smooth()
+
+data %>%
+  ggplot(aes(windspeed, logit)) +
+  geom_point() +
+  geom_smooth()
+```
+
+Looking at the relation of the weather predictors vs. the logit of the success probability, we can conclude that these also show a linear relation. In case of `hum`, the `0` values do not follow this linear trend. This is perhaps due to them being outliers.
+
+## IID Binomial {#iid}
+The outcome of the model should be binary and follow a independent and identically distributed binomial distribution. If this assumption is violated, it might introduce a bias in our model.
+
+For this assumption to hold, we obtain the levels of our outcome variable whilst also showing the ratio of our minority- and majority class.
 ```{r check binary outcome}
 data %>%
   count(more_registered) %>%
   mutate(prop = round(n / sum(n), 2))
 ```
 
-Of course, our outcome variable is binary.
-The balance between both classes looks quite nice. There are a little more data points in the second class, but nothing too egregious.
+Our outcome is indeed binary, moreover the outcome is balanced. Whilst the majority class occurs more often, it is nothing too egregious.
+
+Lastly, there needs to be an absence of residual clustering within our data. To validate this absence, we calculate the ICC using the deviance residuals. With the variables provided with the data, we chose to investigate whether the `hr` class causes residual clustering:
+```{r check residual clustering}
+ICCbare(x = data$hr, y = resid(model6, type = "deviance"))
+```
+This is not the case, hence the entire assumption holds.
+
+## Balanced outcomes
+The accuracy will be affected by an major imbalance in the outcome class. Small imbalances are handled quite well, hence these do not pose an issue in our analysis.  
+As noted in our [IID Binomial assumption](#iid), the outcome classes are fairly balanced. The majority class occurs 57% of the time, which we do not observe as a major imbalance.
 
 ## Sufficient sample size
 
-Using the proportion of the minority class, obtained from previous table, we can calculate the minimal amount of positive cases necessary for this assumption to hold.
+Using the proportion of the minority class, obtained from previous [outcome table](#iid), we can calculate the minimal amount of positive cases necessary for this assumption to hold.
 ```{r check sample size}
 minimum_positive_cases <- function(k, p) {
   round((10 * k) / p)
@@ -518,42 +562,16 @@ minimum_positive_cases <- function(k, p) {
 minimum_positive_cases(4, 0.43)
 ```
 
-This assumption is easily met; there are 17376 observations.
-
-## Continuous predictors are linearly related to the logit(π)
-
-A logistic regression assumes a linear relationship between the logit of the outcome, and the continuous predictor variables. 
-
-```{r}
-data$logit <- predict(model6, type = "link")
-
-data %>%
-  ggplot(aes(temp, logit)) +
-  geom_point() +
-  geom_smooth(method = "glm")
-
-data %>%
-  ggplot(aes(hum, logit)) +
-  geom_point() +
-  geom_smooth(method = "glm")
-
-data %>%
-  ggplot(aes(windspeed, logit)) +
-  geom_point() +
-  geom_smooth(method = "glm")
-```
-
-All plots show a linear relationship.
+This assumption is easily met - there are 17376 observations.
 
 ## Influential data points
-
-The model should not be biased due to extremely influential data points. We can measure Cook's distance, as well as plot a residuals vs leverage plot, to check whether this assumption is violated or not.
+The model should not be contaminated due to extremely influential data points. We can detect influential observations by looking at the leverage of our predictors and whether an outcome value is an outlier - this is done by observing the Cook's Distance of our observations. Furthermore, we plot residuals vs. leverage to gain insight into potential influential data points.  
 
 ```{r}
 plot(model6, which = c(4, 5))
 ```
 
-No points seem to fall outside of the thresholds for a too large Cook's distance, or influential leverage. 
+As we do not observe any data points falling outside of the Cook's Distance threshold, we can conclude thaare are influential observations and thus the assumption holds.
 
 ## Deviance residuals
 
