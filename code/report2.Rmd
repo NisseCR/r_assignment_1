@@ -367,34 +367,59 @@ Due to the fact that `atemp` might be a correction of `temp` using potential lat
 ### Predictor effect on outcome {.tabset}
 
 #### Workingday
+Plotting the amount of success and failure occurrences per `workinday` category gives us insight into how the variable possibly affects our outcome. From the bar graph, we can conclude that the proportion of registered users compared to the total amount of users changes dramatically between weekends and workdays. In particular, the proportion of registered users sits below its respective average during the weekends, whilst the majority of observations during workdays have a registered proportion higher than its average.
 ```{r effect workingday}
 ggplot(data, aes(workingday)) +
   geom_bar(aes(fill = more_registered))
 ```
 
+By inspecting the average proportion values per `workingday` category, we can indeed conclude that the proportion is more likely to exceed its respective mean threshold when `workinday` is set to `1`.
+
+```{r change workinday vs. outcome}
+
+data %>%
+  group_by(workingday) %>%
+  summarise(
+    average_prop = mean(registered_prop),
+    threshold = prop_mean
+  )
+```
+
+Thus, `workinday` can possibly have a strong effect on our outcome variable.
+
 #### Temperature
-```{r effect temperature}
+
+By inspecting the distribution of temperature faceted on our outcome variable, we notice that in case of lower proportions of our registered users, the temperature seems to be left-skewed, whilst higher than usual registered proportions skew the distribution to the right. This could indicate that registered users are more inclined to still rent a bike at lower temperatures compared to casual users, which seems likely.  
+Therefore, the outcome variable seems to be affected by `temp` as well.
+
+```{r effect temperature, message = FALSE}
 ggplot(data, aes(temp)) +
   geom_histogram(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)
 ```
 
 #### Humidity
-```{r effect humidity}
+
+Similar to the variable `temp`, we notice a change in distribution of `hum` based on our outcome variable. In particular, the distribution of `hum` is normally distributed when the proportion of registered users is lower than usual. In the case of the proportion being higher, the `hum` distribution seems to be left-skewed, albeit slightly. This could suggest that registered users are more inclined to go by bike than casual users when the humidity is high. That said, it is worthy to note that the shift in distribution - and therefore the effect of `hum` of our outcome - is weaker compared to that of `temp`, hence the effect of `hum` on our outcome might be weaker than `temp`.
+
+```{r effect humidity, message = FALSE}
 ggplot(data, aes(hum)) +
   geom_histogram(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)
 ```
 
 #### Windspeed
-```{r effect windspeed}
+
+
+
+```{r effect windspeed, message = FALSE}
 ggplot(data, aes(windspeed)) +
   geom_histogram(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)
 ```
 
 #### Weathersit
-```{r effect weathersit}
+```{r effect weathersit, message = FALSE}
 ggplot(data, aes(weathersit)) +
   geom_bar(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)
