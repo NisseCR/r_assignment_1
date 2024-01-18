@@ -182,7 +182,7 @@ We obtained the descriptive statistics of our variables.
 summary(data)
 ```
 
-The most important information we obtained here is that the data contains `r n_days` unique days, meaning that the entirety of 2011 (365 days) and 2012 (366 days) was recorded. However, we note that some `hr` categories occur less often than others within the dataset.
+The most important information we obtained here is that the data contains `r n_days` unique days, meaning that the entirety of 2011 (365 days) and 2012 (366 days) was recorded. However, we note that some `hr` categories occur less often than others within the dataset. This might suggest that entire entries might be missing.
 
 ## Distributions {#dists}
 
@@ -210,12 +210,28 @@ grid.arrange(ncol = 3,
       + labs(x = "Weathersit", y = "Frequency") + theme_bw()
 )
 ```
+The histogram of the registered proportion reveals that registered users make up the majority of our total rental counts within our data, with the distribution being heavily left-skewed. This confirms why simply comparing the amount of casual vs. registered users will result in a heavily imbalanced binary outcome variable, hence basing the outcome variable based on the average proportion is a more feasible outcome.
 
-The histogram of number of bike rental reveals that lower numbers of rentals are much more frequent, with no (or little to no) bikes being rented being the most frequent state. Based on the graph used to create day segments, we are fairly certain that this distribution would look differently per `hr_seg` cluster and that the majority of the low number of rentals occur in the night. 
+The histogram of number of bike rental reveals that lower numbers of rentals are much more frequent, with no (or little to no) bikes being rented being the most frequent state.
 
-The hour graph confirms the missing records in some `hr` categories. We suspect that this could be caused by data cleaning from the author of the dataset, since the night hours are likely to have no rentals. Alternatively, maybe the bike rental company was not operating during those low traffic hours for reasons that could include lack of night workers or updates in the system. Lastly, we considered time changes, however, those would only impact the records of one of the hours. Nevertheless, the difference should not impact the final results of our analysis. 
+```{r hour influence}
+data %>%
+  group_by(hr) %>%
+  summarise(
+    cnt = sum(cnt)
+  ) %>%
+  ggplot(aes(hr, cnt)) +
+    geom_bar(stat = "identity") +
+    labs (x = "Hour (0 represents 1 am)",
+          y = "Sum of rentals in 2011 and 2012",
+          title = "Distribution of bike rentals throughout the day") +
+  theme_bw()
+  
+```
 
-The weather phenomena histograms reveals that the 4th category, the harshest weather phenomena, is barely present. If we use it in our model, the category would be a categorical outlier and needs to be addressed. 
+Looking at the above graph, the high occurrence of lower bike rentals (both registered and casual) is most likely caused by the night hours. Specifically, people barely rent bikes during the night.
+
+The weather phenomena histograms reveals that the 4th category, the harshest weather phenomena, is barely present. We will inspect this further when detecting possible outliers.
 
 The distribution of temperature and feeling temperature is quite normal. However, both humidity and wind speed have a number of `0` values that are disjointed from the rest of the data. They may constitute possible outliers and we will look at them closer in the next section. 
 
@@ -304,6 +320,8 @@ anyNA(data)
 There is no standard missing data. There is no missing data in general under any other name. 
 
 ### Missing records for hour
+
+The hour graph confirms the missing records in some `hr` categories. We suspect that this could be caused by data cleaning from the author of the dataset, since the night hours are likely to have no rentals. Alternatively, maybe the bike rental company was not operating during those low traffic hours for reasons that could include lack of night workers or updates in the system. Lastly, we considered time changes, however, those would only impact the records of one of the hours. Nevertheless, the difference should not impact the final results of our analysis. 
 
 As mentioned before the only type of missing data is the fact that our dataset is not complete in terms of containing all the hours of the two years. Some `hr` values seem to have a lower amount of occurrences than others, as can be seen below:
 
