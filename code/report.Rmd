@@ -691,7 +691,7 @@ As we do not observe any data points falling outside of the Cook's Distance thre
 
 Technically, we don't need to check for deviance residuals as a core assumption for logistic regression. It is, however, a good way to check if the data points are fit well by the model.
 
-```{r check deviance residuals}
+```{r check deviance residuals, warning = FALSE}
 dr <- resid(model6, type = "deviance")
 
 eta <- predict(model6, type = "link")
@@ -726,13 +726,13 @@ summary(model6)
 Model quality for logistic regression can be assessed based on how well the model classifies cases as successes and failures. For classification testing of our model we used a confusion matrix. To produce one, the model has to classify each case based on whether the probability is a success. We decided to use a threshold of 0.5, as in: if the probability of the proportion of registered users is higher than average is 50% then the case is classified as a "success". We decided to use the standard 0.5 threshold because we did not find any substantial reason to justifying changing it to a different value.
 
 ```{r confusion matrix}
-# to create a confusion matrix we require a variable that informs us if the model classifies a given 
+# To create a confusion matrix we require a variable that informs us if the model classifies a given
 data <- data %>%
 mutate(piHat = predict(model6, type = "response"),
 yHat = as.factor(ifelse(piHat <= 0.5, "0", "1"))
 )
 
-#creating the confusion matrix 
+# Creating the confusion matrix.
 cMat <- confusionMatrix(data = data$yHat, reference = data$more_registered)
 
 cMat$table
