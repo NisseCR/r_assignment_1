@@ -347,23 +347,54 @@ head(missing_df, 10)
 
 The majority of the missing records seems to be concentrated on just four days. Particularly, on the `2012-10-29` and `2012-10-30` the records are missing for 36 consecutive hours, which suggests a system outage of the rental company or another similar disturbance to the measurement of the data. Since the number of missing records is small compared to the size of the dataset, we do not think they will impact our analysis.
 
-## Relations {#relations}
-```{r predictor vs. outcome}
+## Relations {#relation}
+
+### Covariance amongst predictors
+The feeling temperature, represented as `atemp` within the data, by definition might be a combination of other predictor variables such as `temp`, `windspeed` and `hum`. To check whether indedepent variables might correlate (multicollinearity), we scatter plot `atemp` in particular with other predictor variables to observe potential covariance.  
+
+```{r atemp covariances, echo=FALSE, message=FALSE}
+grid.arrange(
+  ggplot(data, aes(temp, atemp)) + geom_point() + labs(x = "Temperature", y = "Feeling temperature"),
+  ggplot(data, aes(windspeed, atemp)) + geom_point() + labs(x = "Wind speed", y = "Feeling temperature"),
+  ggplot(data, aes(hum, atemp)) + geom_point() + labs(x = "Humidity", y = "Feeling temperature"),
+  nrow = 1
+)
+```
+
+From this we can conclude that `atemp` and `temp` do in fact covary - showing a strong linear relation, whilst `hum` and `windspeed` show no particular relation with respect to `atemp`.  
+Due to the fact that `atemp` might be a correction of `temp` using potential latent variables, we opt to not use the feel temperature in our model.
+
+### Predictor effect on outcome {.tabset}
+
+#### Workingday
+```{r effect workingday}
 ggplot(data, aes(workingday)) +
   geom_bar(aes(fill = more_registered))
+```
 
-ggplot(data, aes(hum)) +
-  geom_histogram(aes(fill = more_registered)) +
-  facet_wrap(~ more_registered)
-
+#### Temperature
+```{r effect temperature}
 ggplot(data, aes(temp)) +
   geom_histogram(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)
+```
 
+#### Humidity
+```{r effect humidity}
+ggplot(data, aes(hum)) +
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
+```
+
+#### Windspeed
+```{r effect windspeed}
 ggplot(data, aes(windspeed)) +
   geom_histogram(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)
+```
 
+#### Weathersit
+```{r effect weathersit}
 ggplot(data, aes(weathersit)) +
   geom_bar(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)
@@ -570,7 +601,7 @@ This assumption is easily met - there are 17376 observations.
 ## Influential data points
 The model should not be contaminated due to extremely influential data points. We can detect influential observations by looking at the leverage of our predictors and whether an outcome value is an outlier - this is done by observing the Cook's Distance of our observations. Furthermore, we plot residuals vs. leverage to gain insight into potential influential data points.  
 
-```{r}
+```{r check infuential outliers}
 plot(model6, which = c(4, 5))
 ```
 
@@ -580,7 +611,7 @@ As we do not observe any data points falling outside of the Cook's Distance thre
 
 Technically, we don't need to check for deviance residuals as a core assumption for logistic regression. It is, however, a good way to check if the data points are fit well by the model.
 
-```{r}
+```{r check deviance residuals}
 dr <- resid(model6, type = "deviance")
 
 eta <- predict(model6, type = "link")
