@@ -2,7 +2,7 @@ Role;Variable;Name;Type;Characteristics
 Outcome component;Number of non-subscribed rentals;casual;Continuous;
 Outcome component;Number of subcribed rentals;registered;Continuous;
 Outcome component;Number of total rentals;cnt;Continuous;
-Predictor;Working day indicator; workingday;Categorical;Binary, 1 for working days
+Predictor;Working day indicator; workingday;Categorical;Binary, 1 for working days and 0 for holidays and weekends
 Predictor;Temperature ;temp;Continuous;Normalized 0-1 originally in Celsius
 Predictor;Feeling temperature;atemp;Continuous;Normalized 0-1 originally in Celsius
 Predictor;Humidity;hum;Continuous;Normalized 0-1
