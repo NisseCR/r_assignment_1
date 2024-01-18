@@ -25,15 +25,15 @@ text-align: justify}
 
 In principle bicycles pose a good substitute for car use in urban areas, however, they have certain limitations. Among them is the exposure of cyclists to weather while commuting compared to other means of transportation. It would be intuitive for the number of bike rentals to be dependent on current weather conditions. If that is the case, the extent of that relationship would be important information for the bikesharing companies. Potentially, the information could be a factor in variety if business decisions, including level of pricing or supply for bikes in different seasons. Also, bike rental companies might want to know what target group to advertise to. Maybe they can attract casual users to rent their bikes more often, or maybe they want to instead appeal to casual users to become registered users sooner.
 
-Considering these possible applications, this report will attempt to answer: **To what extent can weather data predict the likelihood for the ratio of the usage of bike of registered users to casual users to increase past its average, and is this effect different for working days than for weekend days?** Weather data is understood in terms of temperature, wind speed, humidity and occurrence of weather phenomena (including storms, snow and rain).
+Considering these possible applications, this report will attempt to answer: **To what extent can weather data predict the likelihood of the ratio of registered rentals to casual rentals being above average, and is this effect different for working days than for non-working days?** Weather data is understood in terms of temperature, wind speed, humidity and occurrence of weather phenomena (including storms, snow and rain).
 
 This research question sounds a bit complicated, so let us elaborate.
 First of all, why not just try to find out if we can predict the likelihood if, in any condition, a registered user is more likely to use a bike, than a casual user? There is a fundamental problem with phrasing the research question like this; what if, by default, a large proportion of the bike rentals are done by registered users in the first place? Instead, we calculate the overall average proportion of registered to casual users, in order to establish a starting point for the analysis. Then, we see if there are any conditions under which this proportion is likely to skew towards registered users.
-Then, we predict that this effect is moderated by whether it is a working day, or a weekend day. After all, a registered user might feel more inclined to make use of their subscription when going to work, even when the weather is bad, whereas a non-registered user might instead opt to use public transport, or other forms of transport.
+Then, we check if this effect is moderated by whether it is a working day, or a non-working day (holiday or weekend). After all, a registered user might feel more inclined to make use of their subscription when going to work, even when the weather is bad, whereas a non-registered user might instead opt to use public transport, or other forms of transport.
 
 ---
 # Dataset
-The dataset was retrieved from the open-source machine learning repository [UC Irvine](https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset) and Hadi Fanaee-T from the Laboratory of Artificial Intelligence and Decision Support (LIAAD), University of Porto is credited as its author. The bike rentals data originates from the Capital Bikeshare company based in Washington DC, United States. The dataset contains the hourly and daily counts of bike rentals and weather data in the years 2011 and 2012 in the American capital. We opted to use the hourly data due for modeling, due to the larger sample size (the dataset consists of 17379 data points) and less aggregated data. We found the smaller degree of aggregation important, as weather can change drastically throughout a 24 hour period. In case of further interest or replication of our research analysis, you can trace the link to this dataset at the end of this paper in our [References](#ref)
+The dataset was retrieved from the open-source machine learning repository [UC Irvine](https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset) and Hadi Fanaee-T from the Laboratory of Artificial Intelligence and Decision Support (LIAAD), University of Porto is credited as its author. The bike rentals data originates from the Capital Bikeshare company based in Washington DC, United States. The dataset contains the hourly and daily counts of bike rentals and weather data in the years 2011 and 2012 in the American capital. We opted to use the hourly data due for modeling, due to the larger sample size (the dataset consists of 17379 data points) and less aggregated data. We found the smaller degree of aggregation important, as weather can change drastically throughout a 24 hour period.
 
 # Loading data
 
@@ -72,7 +72,7 @@ data <- source_data
 head(data)
 ```
 
-We then create a sub-selection of variables that are of interest for our model; these are the control, predictor and outcome variables, as well as, variables necessary for EDA and preprocessing.
+We then create a sub-selection of variables that are of interest for our model; these are the control, predictor and outcome variables, as well as variables necessary for EDA and preprocessing.
 
 ```{r variable selection}
 data <- select(data,
@@ -114,7 +114,7 @@ The categories of `weathersit` represent the following weather phenomena and the
 # Preprocessing & EDA {#eda}
 
 ## Type checking
-Some of our categorical variables (i.e. `workingday`, `weathersit`, `hr`) are interpreted as integers rather than factors. We transform these data to factors for ease of processing and modeling.
+Some of our categorical variables (i.e. `workingday`, `weathersit`, `hr`) are interpreted as integers, rather than factors. We transform these data to factors for easier processing and modelling.
 
 ```{r transform types}
 # Factorise columns
@@ -187,7 +187,7 @@ The most important information we obtained here is that the data contains `r n_d
 
 ## Distributions {#dists}
 
-Since the summaries are not giving a precise enough picture, we histograms of the variables.
+Since the summaries are not giving a precise enough picture, we make histograms of the variables.
 
 ```{r distributions, echo=FALSE, message=FALSE}
 grid.arrange(ncol = 3,
@@ -212,7 +212,7 @@ grid.arrange(ncol = 3,
 )
 ```
 
-The histogram of the registered proportion reveals that registered users make up the majority of our total rental counts within our data, with the distribution being heavily left-skewed. This confirms why simply comparing the amount of casual vs. registered users will result in a heavily imbalanced binary outcome variable, hence basing the outcome variable based on the average proportion is a more feasible outcome.
+The histogram of the registered proportion reveals that registered users make up the majority of our total rental counts within our data, with the distribution being heavily left-skewed. This confirms why simply comparing the amount of casual vs. registered users will result in a heavily imbalanced binary outcome variable, hence basing the outcome variable on the average proportion is a more feasible approach.
 
 The histogram of number of bike rental reveals that lower numbers of rentals are much more frequent, with no (or little to no) bikes being rented being the most frequent state.
 
@@ -243,11 +243,11 @@ We investigate the "problematic" variables: humidity, wind speed and number of r
 ### Rental count outliers
 ```{r hour influence}
 data %>%
-  group_by(hr) %>%
+  group_by(hr, more_registered) %>%
   summarise(
     cnt = sum(cnt)
   ) %>%
-  ggplot(aes(hr, cnt)) +
+  ggplot(aes(hr, cnt, fill = more_registered)) +
     geom_bar(stat = "identity") +
     labs (x = "Hour (0 represents 1 am)",
           y = "Sum of rentals in 2011 and 2012",
@@ -681,7 +681,7 @@ summary(model6)
 
 ### Classification Performance
 
-Model quality for logistic regression can be assessed based on how well does the model classify cases as successes and failures. For classification testing of our model we used a confusion matrix. To produce one, the model has to classify each case based on the probability it is a success. We decided to use a threshold of 0.5, as in: if the probability of the proportion of registered users is higher than average is 50% then the case is classified as a "success". We decided to use the standard 0.5 threshold because we did not find any substantial reason to justifying changing it to a different value. 
+Model quality for logistic regression can be assessed based on how well the model classifies cases as successes and failures. For classification testing of our model we used a confusion matrix. To produce one, the model has to classify each case based on whether the probability is a success. We decided to use a threshold of 0.5, as in: if the probability of the proportion of registered users is higher than average is 50% then the case is classified as a "success". We decided to use the standard 0.5 threshold because we did not find any substantial reason to justifying changing it to a different value. 
 
 ```{r confusion matrix}
 # to create a confusion matrix we require a variable that informs us if the model classifies a given 
@@ -746,7 +746,7 @@ To interpret the intercept and coefficients in more understandable units we conv
 coef(model6) %>% exp()
 ```
 
-It is important to note that the variables windspeed, temperature and humidity were standardized, thus a unit step in them is not expressed in any specific units (such as km/h) and a unit step increase represents a really big change in the variable value. Additionally, the continuous variables have been standardized, which changes the interpretation of the intercept and of partial effects. Lastly, the reference categories for wheathersit and workingday are weathersit = 1 (lightest weather phenomena) and a non-working day accordingly. 
+It is important to note that the variables windspeed, temperature and humidity were normalized, thus a unit step in them is not expressed in any specific units (such as km/h) and a unit step increase represents a really big change in the variable value. Additionally, the continuous variables have been mean-centered, which changes the interpretation of the intercept and of partial effects. Lastly, the reference categories for weathersit and workingday are weathersit = 1 (lightest weather phenomena) and a non-working day accordingly. 
 
 ### Intercept
 The intercept equals 0.302. Thus, the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is 0.302 times lower when wheathersit is equal to 1 (lightest wheather phenomena), it is a non-workingday and humidity, temperature and windspeed are at their mean value. 
@@ -758,7 +758,7 @@ The slope of workingday1 is equal to 8.356. Thus on a workingday the odds ratio 
 The slope of windspeed is equal to 3.277. This means that for a unit increase in windspeed the odds ratio of the proportion of registered rental bikes being higher than average to lower than average increases 3.277 times, if temperature and humidity are fixed and 'workingday' and 'wheathersit' are equal to their reference categories (non-working day and 1, accordingly). 
 
 ### Temperature
-The temperature's coefficient is equal to `r round(3.263983e-04, digits = 6)`. This means that for a unit increase in temperature the odds ratio of the proportion of registered rental bikes being higher than average to lower than average decreses `r round(3.263983e-04, digits = 6)` times, if windspeed and humidity are fixed and 'workingday' and 'wheathersit' are equal to their reference categories. 
+The temperature's coefficient is equal to $3.26*10^{-4}$. This means that for a unit increase in temperature the odds ratio of the proportion of registered rental bikes being higher than average to lower than average decreses $3.26*10^{-4}$ times, if windspeed and humidity are fixed and 'workingday' and 'wheathersit' are equal to their reference categories. 
 
 
 ### Humidity 
