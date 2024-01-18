@@ -23,9 +23,13 @@ text-align: justify}
 
 "*Bikesharing contributes to the advent of more sustainable transportation in cities around the globe.*" [@beland]. Bikesharing programs are designed to provide short-term bicycle rental in stations dispersed throughout the cities and located near public transportation hubs [@beland]. They have numerous environmental and health benefits, such as reducing congestion, complementing other forms of public transportation and encouraging exercise [@beland]. Additionally, accessible bike rental has a lower barrier of entry than purchasing your own bike and is more convenient for out-of-town commuters.  
 
-In principle bicycles pose a good substitute for car use in urban areas, however, they have certain limitations. Among them is the exposure of cyclists to weather while commuting compared to other means of transportation. It would be intuitive for the number of bike rentals to be dependent on current weather conditions. If that is the case, the extent of that relationship would be important information for the bikesharing companies. Potentially, the information could be a factor in variety if business decisions, including level of pricing or supply for bikes in different seasons.   
+In principle bicycles pose a good substitute for car use in urban areas, however, they have certain limitations. Among them is the exposure of cyclists to weather while commuting compared to other means of transportation. It would be intuitive for the number of bike rentals to be dependent on current weather conditions. If that is the case, the extent of that relationship would be important information for the bikesharing companies. Potentially, the information could be a factor in variety if business decisions, including level of pricing or supply for bikes in different seasons. Also, bike rental companies might want to know what target group to advertise to. Maybe they can attract casual users to rent their bikes more often, or maybe they want to instead appeal to casual users to become registered users sooner.
 
-Considering these possible applications, this report will attempt to answer: **To what extent can weather data predict the number of bike rentals in different parts of the day?** Weather data is understood in terms of temperature, wind speed, humidity and occurrence of weather phenomena (including storms, snow and rain). 
+Considering these possible applications, this report will attempt to answer: **To what extent can weather data predict the likelihood for the ratio of the usage of bike of registered users to casual users to increase past its average, and is this effect different for working days than for weekend days?** Weather data is understood in terms of temperature, wind speed, humidity and occurrence of weather phenomena (including storms, snow and rain).
+
+This research question sounds a bit complicated, so let us elaborate.
+First of all, why not just try to find out if we can predict the likelihood if, in any condition, a registered user is more likely to use a bike, than a casual user? There is a fundamental problem with phrasing the research question like this; what if, by default, a large proportion of the bike rentals are done by registered users in the first place? Instead, we calculate the overall average proportion of registered to casual users, in order to establish a starting point for the analysis. Then, we see if there are any conditions under which this proportion is likely to skew towards registered users.
+Then, we predict that this effect is moderated by whether it is a working day, or a weekend day. After all, a registered user might feel more inclined to make use of their subscription when going to work, even when the weather is bad, whereas a non-registered user might instead opt to use public transport, or other forms of transport.
 
 ---
 # Dataset
@@ -41,7 +45,7 @@ The repository provided us with three files, namely:
 
 We first specify our dependencies and read the data from `hour.csv`. We also load `day.csv`, solely for comparison purposes in our [EDA](#eda) phase.  
 
-```{r import dependencies, message = FALSE}
+```{r import dependencies, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(fastDummies)
 library(kableExtra)
@@ -113,6 +117,7 @@ The categories of `weathersit` represent the following weather phenomena and the
 Some of our categorical variables (i.e. `workingday`, `weathersit`, `hr`) are interpreted as integers rather than factors. We transform these data to factors for ease of processing and modeling.
 
 ```{r transform types}
+# Factorise columns
 data <- data %>%
   mutate(
     workingday = as.factor(workingday),
@@ -122,14 +127,10 @@ data <- data %>%
 ```
 
 ## Creating Additional Variables {.tabset}
-We decided that including a time component in our final model is essential. Night hours are approximately half of the data and are characterized by much lower rental counts than the daylight values. Without separating the night data the predictors we expected the predicted rentals during the more active periods to be underestimated. However, we are interested in modeling rental values for the entire day. Thus, we do want to include the hours as a categorical predictor to be able to control the night and day periods. 
-
-However, 24 dummy codes is too much for substantive interpretation. Thus, we decided to aggregate the hourly data into 3 day segments night (23-6), morning-noon(7-14) and eve (15-22). The decision to divide into these categories was made by looking at the distribution of the rental counts at specific hours. We noticed a natural division into these 3 segments. Dividing the time in these periods would potentially solve the problem of interpreting dummy encodings and clusters of  low-night and high-day rentals being incorrectly estimated.
-
-This section describes the process of creating new variables that will be later used to aggregate the data into segments. The aggregation process is described in [Data Aggregation](#agg).
+This section describes the process of creating new variables that are either necessary for EDA, or form the outcome variable for our logistic model.
 
 ### Create outcome variable
-By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals of the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`.
+By combining the component outcome variables mentioned in [Variable description](#vardesc), we create `registered_prop`, which is the proportion subscribed rentals compared to the total rental count. Consequently, we use the mean of this variable to create a binary outcome variable called `more_registered`.
 
 ```{r create outcome variable}
 # Create binary variable, returning true if proportion is higher than respective mean.
@@ -182,14 +183,16 @@ We obtained the descriptive statistics of our variables.
 summary(data)
 ```
 
-The most important information we obtained here is that the data contains `r n_days` unique days, meaning that the entirety of 2011 (365 days) and 2012 (366 days) was recorded. However, we note that there is approximately 100 less "night" hours in the dataset than the other two segments suggesting there might be some missing records.  
+The most important information we obtained here is that the data contains `r n_days` unique days, meaning that the entirety of 2011 (365 days) and 2012 (366 days) was recorded. However, we note that some `hr` categories occur less often than others within the dataset. This might suggest that entire entries might be missing.
 
 ## Distributions {#dists}
 
 Since the summaries are not giving a precise enough picture, we histograms of the variables.
 
 ```{r distributions, echo=FALSE, message=FALSE}
-grid.arrange(
+grid.arrange(ncol = 3,
+    ggplot(data, aes(registered_prop)) + geom_histogram() + 
+      labs (x = "Registered proportion", y = "Frequency") + theme_bw(),
     ggplot(data, aes(cnt)) + geom_histogram() + 
       labs (x = "Bike rentals total", y = "Frequency") + theme_bw(),
     ggplot(data, aes(casual)) + geom_histogram() + 
@@ -205,21 +208,21 @@ grid.arrange(
     ggplot(data, aes(windspeed)) + geom_histogram() + labs (x = "Wind speed",
           y = "Frequency")+ theme_bw(),
     ggplot(data, aes(weathersit)) + geom_bar(stat = 'count')
-      + labs(x = "weathersit", y = "Frequency") + theme_bw()
+      + labs(x = "Weathersit", y = "Frequency") + theme_bw()
 )
 ```
 
-The histogram of number of bike rental reveals that lower numbers of rentals are much more frequent, with no (or little to no) bikes being rented being the most frequent state. Based on the graph used to create day segments, we are fairly certain that this distribution would look differently per `hr_seg` cluster and that the majority of the low number of rentals occur in the night. 
+The histogram of the registered proportion reveals that registered users make up the majority of our total rental counts within our data, with the distribution being heavily left-skewed. This confirms why simply comparing the amount of casual vs. registered users will result in a heavily imbalanced binary outcome variable, hence basing the outcome variable based on the average proportion is a more feasible outcome.
 
-The hour graph confirms the missing records in some `hr` categories. We suspect that this could be caused by data cleaning from the author of the dataset, since the night hours are likely to have no rentals. Alternatively, maybe the bike rental company was not operating during those low traffic hours for reasons that could include lack of night workers or updates in the system. Lastly, we considered time changes, however, those would only impact the records of one of the hours. Nevertheless, the difference should not impact the final results of our analysis. 
+The histogram of number of bike rental reveals that lower numbers of rentals are much more frequent, with no (or little to no) bikes being rented being the most frequent state.
 
-The weather phenomena histograms reveals that the 4th category, the harshest weather phenomena, is barely present. If we use it in our model, the category would be a categorical outlier and needs to be addressed. 
+The weather phenomena histograms reveals that the 4th category, the harshest weather phenomena, is barely present. We will inspect this further when detecting possible outliers.
 
 The distribution of temperature and feeling temperature is quite normal. However, both humidity and wind speed have a number of `0` values that are disjointed from the rest of the data. They may constitute possible outliers and we will look at them closer in the next section. 
 
 ## Outliers {.tabset}
 
-Since there was an indication of outliers, we decided to detect them using quantiles. We made the following box plots:  
+Since there was an indication of outliers, we decided to detect them using quartiles. We made the following box plots:  
 ```{r boxplots, echo=FALSE, message=FALSE}
 grid.arrange(
   ggplot(data, aes(temp)) + geom_boxplot() + labs (x = "Temperature") + theme_bw(),
@@ -228,28 +231,34 @@ grid.arrange(
   ggplot(data, aes(windspeed)) + geom_boxplot() + labs (x = "Wind speed") + theme_bw(),
   ggplot(data, aes(cnt)) + geom_boxplot() + labs (x = "Bike rentals total") + theme_bw(),
   ggplot(data, aes(casual)) + geom_boxplot() + labs (x = "Bike rentals casual") + theme_bw(),
-  ggplot(data, aes(registered)) + geom_boxplot() + labs (x = "Bike rentals subscirbed") + theme_bw()
+  ggplot(data, aes(registered)) + geom_boxplot() + labs (x = "Bike rentals subscribed") + theme_bw()
 )
 ```
 
-The box plots further support our observations from earlier. Temperature and feeling temperature are distributed very normally and display no outliers on the box plots. Humidity has a a few `0` values that are flagged as outliers. In the wind speed, the large number of `0` values skews the distribution towards the smaller values, leaving a lot of the high wind speeds as outliers. The box plot of number of bike rentals reveals a large number of outliers in our outcome component variable. A similar pattern can be observed for the casual and registered bike rentals.
+The box plots further support our observations from earlier. Temperature and feeling temperature are distributed very normally and display no outliers on the box plots. Humidity has a a few `0` values that are flagged as outliers. In the wind speed, the large number of `0` values skews the distribution towards the smaller values, leaving a lot of the high wind speeds as outliers. The box plot of number of bike rentals reveals a large number of outliers in our outcome component variable. A similar pattern can be observed for the casual and registered bike rentals.  
+Lastly, the `weathersit` category `4` seems to be barely present according to the [distributions](#dists).  
 
-We investigate the "problematic" variables: humidity, wind speed and number of rentals, further below:
+We investigate the "problematic" variables: humidity, wind speed and number of rentals and weathersit further below:
 
 ### Rental count outliers
-
-Since we suspect that a large amount of rentals' outliers is due to low rental count during the night, we decided to make separate histogram and boxplot graphs for the three day segments.  
-```{r distributions rental count, echo=FALSE, message=FALSE}
-ggplot(data, aes(cnt)) + geom_histogram() + labs (x = "Number of bike rentals",  title = "Distribution of bike rentals throughout the day segments")+ theme_bw()
+```{r hour influence}
+data %>%
+  group_by(hr) %>%
+  summarise(
+    cnt = sum(cnt)
+  ) %>%
+  ggplot(aes(hr, cnt)) +
+    geom_bar(stat = "identity") +
+    labs (x = "Hour (0 represents 1 am)",
+          y = "Sum of rentals in 2011 and 2012",
+          title = "Distribution of bike rentals throughout the day") +
+  theme_bw()
+  
 ```
 
-In the histogram we see the drastically different night distribution to the other two day segments, with the frequency of small numbers of rentals dominating the entire data. However, all three distributions are quite positively-skewed even after the division  into the time segments. 
+Looking at the above graph, the high occurrence of lower bike rentals (both registered and casual) is most likely caused by the night hours. Specifically, people barely rent bikes during the night.
 
-```{r boxplots rental count, echo=FALSE, message=FALSE}
-ggplot(data, aes(cnt)) + geom_boxplot() + labs (x = "Number of bike rentals",  title = "Boxplot of bike rentals, seperated by the day segments")+ theme_bw()
-```
-
-The right-skewed distributions throughout the segments are visible in the boxplots. That is why dividing the boxplot according to the time segments still results in outliers at the tail-end of the values. However, the outlier values are quite reasonable. It is realistic for the rental company to be far more likely to receive  smaller number of rentals and not operating at their full capacity. Hence the outliers remain in the dataset.
+In the histogram we see the drastically different night distribution, with the frequency of small numbers of rentals dominating the entire data. However, the distribution of rental counts is quite positively-skewed. Therefore, the data points at the tail-end of the distribution will be marked as outliers within the boxplot. However, the outlier values are quite reasonable. It is realistic for the rental company to be far more likely to receive  smaller number of rentals and not operating at their full capacity. Hence the outliers remain in the dataset.
 
 ### Windspeed outliers
 
@@ -279,11 +288,14 @@ data %>%
 In fact, there are 22 hours in which the value is registered. Humidity of `0.00` is not possible in nature, which suggests that the values might be a mistake or a missing value. However, the values have been normalized and we do not know the specific method used. Thus, there is a significant possibility that the value `0.00` does not represent a true `0.00` humidity and is just the minimal value in the data. Since the number of these outliers is small and they could be real data, we chose to keep them.
 
 ### Weathersit outliers
+We first determing the amount of occurrences within our data *per* `weathersit` category:
 ```{r weathersit 4 detection}
 # Inspect occurrence count for weathersit categories.
 data %>%
   count(weathersit)
 ```
+
+We note that weathersit `4` only has 3 observations within a sample size of 17k+ records. Due to this, we ascertain this is a categorical outlier and will hence be removed by the data to prevent contamination of our model:
 
 ```{r weathersit 4 removal}
 # Filter weathersit 4 outliers.
@@ -302,6 +314,8 @@ anyNA(data)
 There is no standard missing data. There is no missing data in general under any other name. 
 
 ### Missing records for hour
+
+The hour graph confirms the missing records in some `hr` categories. We suspect that this could be caused by data cleaning from the author of the dataset, since the night hours are likely to have no rentals. Alternatively, maybe the bike rental company was not operating during those low traffic hours for reasons that could include lack of night workers or updates in the system. Lastly, we considered time changes, however, those would only impact the records of one of the hours. Nevertheless, the difference should not impact the final results of our analysis. 
 
 As mentioned before the only type of missing data is the fact that our dataset is not complete in terms of containing all the hours of the two years. Some `hr` values seem to have a lower amount of occurrences than others, as can be seen below:
 
@@ -345,26 +359,81 @@ head(missing_df, 10)
 
 The majority of the missing records seems to be concentrated on just four days. Particularly, on the `2012-10-29` and `2012-10-30` the records are missing for 36 consecutive hours, which suggests a system outage of the rental company or another similar disturbance to the measurement of the data. Since the number of missing records is small compared to the size of the dataset, we do not think they will impact our analysis.
 
-## Relations {#relations}
-```{r predictor vs. outcome}
+## Relations {#relation}
+
+### Covariance amongst predictors
+The feeling temperature, represented as `atemp` within the data, by definition might be a combination of other predictor variables such as `temp`, `windspeed` and `hum`. To check whether indedepent variables might correlate (multicollinearity), we scatter plot `atemp` in particular with other predictor variables to observe potential covariance.  
+
+```{r atemp covariances, echo=FALSE, message=FALSE}
+grid.arrange(
+  ggplot(data, aes(temp, atemp)) + geom_point() + labs(x = "Temperature", y = "Feeling temperature"),
+  ggplot(data, aes(windspeed, atemp)) + geom_point() + labs(x = "Wind speed", y = "Feeling temperature"),
+  ggplot(data, aes(hum, atemp)) + geom_point() + labs(x = "Humidity", y = "Feeling temperature"),
+  nrow = 1
+)
+```
+
+From this we can conclude that `atemp` and `temp` do in fact covary - showing a strong linear relation, whilst `hum` and `windspeed` show no particular relation with respect to `atemp`.  
+Due to the fact that `atemp` might be a correction of `temp` using potential latent variables, we opt to not use the feel temperature in our model.
+
+### Predictor effect on outcome {.tabset}
+
+#### Workingday
+Plotting the amount of success and failure occurrences per `workinday` category gives us insight into how the variable possibly affects our outcome. From the bar graph, we can conclude that the proportion of registered users compared to the total amount of users changes dramatically between non-workingdays and workdays. In particular, the proportion of registered users sits below its respective average during non-workingdays, whilst the majority of observations during workdays have a registered proportion higher than its average.
+```{r effect workingday}
 ggplot(data, aes(workingday)) +
   geom_bar(aes(fill = more_registered))
+```
 
-ggplot(data, aes(hum)) +
-  geom_histogram(aes(fill = more_registered)) +
-  facet_wrap(~ more_registered)
+By inspecting the average proportion values per `workingday` category, we can indeed conclude that the proportion is more likely to exceed its respective mean threshold when `workinday` is set to `1`.
 
+```{r change workinday vs. outcome}
+
+data %>%
+  group_by(workingday) %>%
+  summarise(
+    average_prop = mean(registered_prop),
+    threshold = prop_mean
+  )
+```
+
+Thus, `workinday` can possibly have a strong effect on our outcome variable.
+
+#### Temperature
+By inspecting the distribution of temperature faceted on our outcome variable, we notice that in case of lower proportions of our registered users, the temperature seems to be left-skewed, whilst higher than usual registered proportions skew the distribution to the right. This could indicate that registered users are more inclined to still rent a bike at lower temperatures compared to casual users, which seems likely.  
+Therefore, the outcome variable seems to be affected by `temp` as well.
+
+```{r effect temperature, message = FALSE}
 ggplot(data, aes(temp)) +
   geom_histogram(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)
+```
 
+#### Humidity
+Similar to the variable `temp`, we notice a change in distribution of `hum` based on our outcome variable. In particular, the distribution of `hum` is normally distributed when the proportion of registered users is lower than usual. In the case of the proportion being higher, the `hum` distribution seems to be left-skewed, albeit slightly. This could suggest that registered users are more inclined to go by bike than casual users when the humidity is high. That said, it is worthy to note that the shift in distribution - and therefore the effect of `hum` of our outcome - might weaker compared to that of `temp`, hence the effect of `hum` on our outcome might be weaker than `temp`.
+
+```{r effect humidity, message = FALSE}
+ggplot(data, aes(hum)) +
+  geom_histogram(aes(fill = more_registered)) +
+  facet_wrap(~ more_registered)
+```
+
+#### Windspeed
+In the case of `windspeed`, the shape of the distribution faceted on our outcome variable does not exhibit a clear change. This is especially true if we compare this to the earlier mentioned predictors, such as `temp`, `hum` and `workingday`. We do observe a change in the total count of occurrences windspeed values when our outcome is true, that said this is probably caused by a slight imbalanced outcome rather.  
+Thus, the effect of `windspeed` on our outcome variable could possibly be weak.
+
+```{r effect windspeed, message = FALSE}
 ggplot(data, aes(windspeed)) +
   geom_histogram(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)
+```
 
-ggplot(data, aes(weathersit)) +
-  geom_bar(aes(fill = more_registered)) +
-  facet_wrap(~ more_registered)
+#### Weathersit
+When looking at the `weathersit` categories - grouped on our outcome variable - we observe that ratio of success to failures, and thus the registered proportion being larger than usual, is noticeably higher the move severe `weathersit` categories are within our data entries. Specifically, for the severe weather category `3` we could possibly conclude that registered users are far more likely to still go by bike compared to casual users. Thus, `weathersit` might have some effect on our outcome variable and is hence worth building our model around.
+
+```{r effect weathersit, message = FALSE}
+ggplot(data, aes(weathersit, fill = more_registered)) +
+  geom_bar()
 ```
 
 # Model selection - Phase 1 {#create_model}
@@ -568,7 +637,7 @@ This assumption is easily met - there are 17376 observations.
 ## Influential data points
 The model should not be contaminated due to extremely influential data points. We can detect influential observations by looking at the leverage of our predictors and whether an outcome value is an outlier - this is done by observing the Cook's Distance of our observations. Furthermore, we plot residuals vs. leverage to gain insight into potential influential data points.  
 
-```{r}
+```{r check infuential outliers}
 plot(model6, which = c(4, 5))
 ```
 
@@ -578,7 +647,7 @@ As we do not observe any data points falling outside of the Cook's Distance thre
 
 Technically, we don't need to check for deviance residuals as a core assumption for logistic regression. It is, however, a good way to check if the data points are fit well by the model.
 
-```{r}
+```{r check deviance residuals}
 dr <- resid(model6, type = "deviance")
 
 eta <- predict(model6, type = "link")
@@ -709,7 +778,7 @@ This is an unexpected outcome, as it means that a change from light weather (wea
 ### Interaction terms
 
 The interaction terms $\hat{\beta_7}$, $\hat{\beta_8}$ and $\hat{\beta_9}$ represent the moderation of weathersit on the effect of respectively windspeed, temperature and humidity on the odds ratio. Since they are significant that means that the effect of these continuous variables is different on a working day as opposed to the ones we analyzed above on a non-working day. 
-?
+
 ```{r calculating_int_coeff, echo=FALSE}
 coeffwind <- 3.276739e+00 * 3.976885e-01
 coefftemp <-  3.263983e-04 * 3.490583e+01
