@@ -669,7 +669,7 @@ summary(model6)$coefficients
 ```
 As can be seen above all of the predictor slopes, interaction terms and the intercept are significantly different from 0.
 
-## Interpretation of coefficents and the intercept {.tabset}
+## Interpretation of coefficents and intercept {.tabset}
 
 To interpret the intercept and coefficients in more understandable units we convert them with an exponential function: 
 ```{r exp_coefficients}
@@ -680,19 +680,20 @@ coef(model6) %>% exp()
 It is important to note that the variables windspeed, temperature and humidity were standardized, thus a unit step in them is not expressed in any specific units (such as km/h) and a unit step increase represents a really big change in the variable value. Additionally, the continuous variables have been standardized, which changes the interpretation of the intercept and of partial effects. Lastly, the reference categories for wheathersit and workingday are weathersit = 1 (lightest weather phenomena) and a non-working day accordingly. 
 
 ### Intercept
-The intercept equals 0.302. Thus, the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is equal to 0.302 when wheathersit is equal to 1 (lightest wheather phenomena), it is a non-workingday and humidity, temperature and windspeed are at their mean valu. 
+The intercept equals 0.302. Thus, the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is 0.302 times lower when wheathersit is equal to 1 (lightest wheather phenomena), it is a non-workingday and humidity, temperature and windspeed are at their mean value. 
 
 ### Workingday
-The slope of workingday1 is equal to 8.356. Thus on a workingday the odds ratio of  the proportion of registered rental bikes being higher than average to lower than average is increases by 8.356 compared to a non-working day; if windspeed, temperature and humidity are equal to their mean value and 'wheathersit' is equal to 1.  
+The slope of workingday1 is equal to 8.356. Thus on a workingday the odds ratio of  the proportion of registered rental bikes being higher than average to lower than average increases 8.356 times the odds ratio on a non-working day; if windspeed, temperature and humidity are fixed and 'wheathersit' is equal to 1. Alternatively, it can be understood as for a workingday the odds ratio increases by 735.6% compared to the non-working day.
 
 ### Windspeed
-The slope of windspeed is equal to 3.277. This means that for a unit increase in windspeed the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is on average higher by 8.356 if temperature and humidity are fixed and 'workingday' and 'wheathersit' are equal to their reference categories (non-working day and 1, accordingly). 
+The slope of windspeed is equal to 3.277. This means that for a unit increase in windspeed the odds ratio of the proportion of registered rental bikes being higher than average to lower than average increases 3.277 times, if temperature and humidity are fixed and 'workingday' and 'wheathersit' are equal to their reference categories (non-working day and 1, accordingly). 
 
 ### Temperature
-The temperature's coefficient is equal to `r round( 3.263983e-04, digits = 3)`. This means that for a unit increase in temperature the odds ratio of the proportion of registered rental bikes being higher than average to lower than average changes on average by `r round( 3.263983e-04, digits = 3)`, if windspeed and humidity are fixed and 'workingday' and 'wheathersit' are equal to their reference categories. 
+The temperature's coefficient is equal to `r round(3.263983e-04, digits = 6)`. This means that for a unit increase in temperature the odds ratio of the proportion of registered rental bikes being higher than average to lower than average decreses `r round(3.263983e-04, digits = 6)` times, if windspeed and humidity are fixed and 'workingday' and 'wheathersit' are equal to their reference categories. 
+
 
 ### Humidity 
-The humidity's coefficient is equal to 2.465. This means that for a unit increase in humidity the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is on average higher by 2.465; if windspeed and temperature are fixed and 'workingday' and 'wheathersit' are equal to their reference categories. 
+The humidity's coefficient is equal to 2.465. This means that for a unit increase in humidity the odds ratio increases 2.465 times; if windspeed and temperature are fixed and 'workingday' and 'wheathersit' are equal to their reference categories. 
 
 ### Weathersit
 'Weathersit' represents the categorical variable that indicates the severity of weather phenomena. As a reminder, the final categories of `weathersit` represent the following weather phenomena and their combinations:
@@ -701,7 +702,9 @@ The humidity's coefficient is equal to 2.465. This means that for a unit increas
 2.    Mist and Cloudy, Mist and Broken clouds, Mist and Few clouds, Mist
 3.    Light Snow, Light Rain and Thunderstorm and Scattered clouds, Light Rain and Scattered clouds
 
-The coefficients of weathersit2 (-0.139) and weathersit3 (0.230) represent the average diffrence in odds ratio between the reference  category (1) and categories 2 and 3 respectively, after controlling for windspeed, temperature, humidity and workingday.  
+The coefficient of weathersit2 represents the fact that the odds ratio for weathersit equal to 2 is (`r round(8.706174e-01, digits = 3)`) times lower than the odds ratio for weathersit equal to 1. Similarly, weathersit3's coefficient  represents that on average the odds ratio increase (`r round(1.258661e+00, digits = 3)`) compared to the reference  category (1), after controlling for all variables. 
+This is an unexpected outcome, as it means that a change from light weather (weathersit1) to a somewhat more severe weather conditions (weathersit2) leads to a decrease in odds ratio of the registered rentals ratio, ie. there should be less registered rentals to casual rentals. At the same time the change from weathersit1 to severe weather conditions (weathersit3) leads to an increase in the odds ratio, thus suggests a bigger number of registered rentals to casual ones. We suspect there might be another variable that explains this effect or possibly weathersit effects one of the variables that compose it in a more understandable manner. Alternatively, this is just the relationship for some reason that we did not come up with and could be found with further investigation. 
+
 
 ### Interaction terms
 
