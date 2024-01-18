@@ -45,7 +45,7 @@ The repository provided us with three files, namely:
 
 We first specify our dependencies and read the data from `hour.csv`. We also load `day.csv`, solely for comparison purposes in our [EDA](#eda) phase.  
 
-```{r import dependencies, message = FALSE}
+```{r import dependencies, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(fastDummies)
 library(kableExtra)
@@ -407,7 +407,8 @@ ggplot(data, aes(hum)) +
 ```
 
 #### Windspeed
-In the case of `windspeed`, the shape of the distribution faceted on our outcome variable does not exhibit a clear change. This is especially true if we compare this to the earlier mentioned predictors, such as `temp`, `hum` and `workinday`. We do observe a change in the total count of occurrences windspeed values when our outcome is true, that said this is probably caused by a slight imbalanced outcome rather.
+In the case of `windspeed`, the shape of the distribution faceted on our outcome variable does not exhibit a clear change. This is especially true if we compare this to the earlier mentioned predictors, such as `temp`, `hum` and `workingday`. We do observe a change in the total count of occurrences windspeed values when our outcome is true, that said this is probably caused by a slight imbalanced outcome rather.  
+Thus, the effect of `windspeed` on our outcome variable could possibly be weak.
 
 ```{r effect windspeed, message = FALSE}
 ggplot(data, aes(windspeed)) +
@@ -416,12 +417,11 @@ ggplot(data, aes(windspeed)) +
 ```
 
 #### Weathersit
-When looking at the `weathersit` categories - faceted on our outcome variable -  
+When looking at the `weathersit` categories - grouped on our outcome variable - we observe that ratio of success to failures, and thus the registered proportion being larger than usual, is noticeably higher the move severe `weathersit` categories are within our data entries. Specifically, for the severe weather category `3` we could possibly conclude that registered users are far more likely to still go by bike compared to casual users. Thus, `weathersit` might have some effect on our outcome variable and is hence worth building our model around.
 
 ```{r effect weathersit, message = FALSE}
-ggplot(data, aes(weathersit)) +
-  geom_bar(aes(fill = more_registered)) +
-  facet_wrap(~ more_registered)
+ggplot(data, aes(weathersit, fill = more_registered)) +
+  geom_bar()
 ```
 
 # Model selection - Phase 1 {#create_model}
