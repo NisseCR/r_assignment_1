@@ -388,7 +388,6 @@ data %>%
 Thus, `workinday` can possibly have a strong effect on our outcome variable.
 
 #### Temperature
-
 By inspecting the distribution of temperature faceted on our outcome variable, we notice that in case of lower proportions of our registered users, the temperature seems to be left-skewed, whilst higher than usual registered proportions skew the distribution to the right. This could indicate that registered users are more inclined to still rent a bike at lower temperatures compared to casual users, which seems likely.  
 Therefore, the outcome variable seems to be affected by `temp` as well.
 
@@ -399,8 +398,7 @@ ggplot(data, aes(temp)) +
 ```
 
 #### Humidity
-
-Similar to the variable `temp`, we notice a change in distribution of `hum` based on our outcome variable. In particular, the distribution of `hum` is normally distributed when the proportion of registered users is lower than usual. In the case of the proportion being higher, the `hum` distribution seems to be left-skewed, albeit slightly. This could suggest that registered users are more inclined to go by bike than casual users when the humidity is high. That said, it is worthy to note that the shift in distribution - and therefore the effect of `hum` of our outcome - is weaker compared to that of `temp`, hence the effect of `hum` on our outcome might be weaker than `temp`.
+Similar to the variable `temp`, we notice a change in distribution of `hum` based on our outcome variable. In particular, the distribution of `hum` is normally distributed when the proportion of registered users is lower than usual. In the case of the proportion being higher, the `hum` distribution seems to be left-skewed, albeit slightly. This could suggest that registered users are more inclined to go by bike than casual users when the humidity is high. That said, it is worthy to note that the shift in distribution - and therefore the effect of `hum` of our outcome - might weaker compared to that of `temp`, hence the effect of `hum` on our outcome might be weaker than `temp`.
 
 ```{r effect humidity, message = FALSE}
 ggplot(data, aes(hum)) +
@@ -409,8 +407,7 @@ ggplot(data, aes(hum)) +
 ```
 
 #### Windspeed
-
-
+In the case of `windspeed`, the shape of the distribution faceted on our outcome variable does not exhibit a clear change. This is especially true if we compare this to the earlier mentioned predictors, such as `temp`, `hum` and `workinday`. We do observe a change in the total count of occurrences windspeed values when our outcome is true, that said this is probably caused by a slight imbalanced outcome rather.
 
 ```{r effect windspeed, message = FALSE}
 ggplot(data, aes(windspeed)) +
@@ -419,6 +416,8 @@ ggplot(data, aes(windspeed)) +
 ```
 
 #### Weathersit
+When looking at the `weathersit` categories - faceted on our outcome variable -  
+
 ```{r effect weathersit, message = FALSE}
 ggplot(data, aes(weathersit)) +
   geom_bar(aes(fill = more_registered)) +

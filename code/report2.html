@@ -3704,6 +3704,18 @@ Therefore, the outcome variable seems to be affected by
 </div>
 <div id="humidity" class="section level4">
 <h4>Humidity</h4>
+<p>Similar to the variable <code>temp</code>, we notice a change in
+distribution of <code>hum</code> based on our outcome variable. In
+particular, the distribution of <code>hum</code> is normally distributed
+when the proportion of registered users is lower than usual. In the case
+of the proportion being higher, the <code>hum</code> distribution seems
+to be left-skewed, albeit slightly. This could suggest that registered
+users are more inclined to go by bike than casual users when the
+humidity is high. That said, it is worthy to note that the shift in
+distribution - and therefore the effect of <code>hum</code> of our
+outcome - is weaker compared to that of <code>temp</code>, hence the
+effect of <code>hum</code> on our outcome might be weaker than
+<code>temp</code>.</p>
 <pre class="r"><code>ggplot(data, aes(hum)) +
   geom_histogram(aes(fill = more_registered)) +
   facet_wrap(~ more_registered)</code></pre>
