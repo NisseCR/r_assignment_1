@@ -234,9 +234,10 @@ grid.arrange(
 )
 ```
 
-The box plots further support our observations from earlier. Temperature and feeling temperature are distributed very normally and display no outliers on the box plots. Humidity has a a few `0` values that are flagged as outliers. In the wind speed, the large number of `0` values skews the distribution towards the smaller values, leaving a lot of the high wind speeds as outliers. The box plot of number of bike rentals reveals a large number of outliers in our outcome component variable. A similar pattern can be observed for the casual and registered bike rentals.
+The box plots further support our observations from earlier. Temperature and feeling temperature are distributed very normally and display no outliers on the box plots. Humidity has a a few `0` values that are flagged as outliers. In the wind speed, the large number of `0` values skews the distribution towards the smaller values, leaving a lot of the high wind speeds as outliers. The box plot of number of bike rentals reveals a large number of outliers in our outcome component variable. A similar pattern can be observed for the casual and registered bike rentals.  
+Lastly, the `weathersit` category `4` seems to be barely present according to the [distributions](#dists).  
 
-We investigate the "problematic" variables: humidity, wind speed and number of rentals, further below:
+We investigate the "problematic" variables: humidity, wind speed and number of rentals and weathersit further below:
 
 ### Rental count outliers
 ```{r hour influence}
@@ -286,11 +287,14 @@ data %>%
 In fact, there are 22 hours in which the value is registered. Humidity of `0.00` is not possible in nature, which suggests that the values might be a mistake or a missing value. However, the values have been normalized and we do not know the specific method used. Thus, there is a significant possibility that the value `0.00` does not represent a true `0.00` humidity and is just the minimal value in the data. Since the number of these outliers is small and they could be real data, we chose to keep them.
 
 ### Weathersit outliers
+We first determing the amount of occurrences within our data *per* `weathersit` category:
 ```{r weathersit 4 detection}
 # Inspect occurrence count for weathersit categories.
 data %>%
   count(weathersit)
 ```
+
+We note that weathersit `4` only has 3 observations within a sample size of 17k+ records. Due to this, we ascertain this is a categorical outlier and will hence be removed by the data to prevent contamination of our model:
 
 ```{r weathersit 4 removal}
 # Filter weathersit 4 outliers.
