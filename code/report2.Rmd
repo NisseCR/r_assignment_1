@@ -210,10 +210,35 @@ grid.arrange(ncol = 3,
       + labs(x = "Weathersit", y = "Frequency") + theme_bw()
 )
 ```
+
 The histogram of the registered proportion reveals that registered users make up the majority of our total rental counts within our data, with the distribution being heavily left-skewed. This confirms why simply comparing the amount of casual vs. registered users will result in a heavily imbalanced binary outcome variable, hence basing the outcome variable based on the average proportion is a more feasible outcome.
 
 The histogram of number of bike rental reveals that lower numbers of rentals are much more frequent, with no (or little to no) bikes being rented being the most frequent state.
 
+The weather phenomena histograms reveals that the 4th category, the harshest weather phenomena, is barely present. We will inspect this further when detecting possible outliers.
+
+The distribution of temperature and feeling temperature is quite normal. However, both humidity and wind speed have a number of `0` values that are disjointed from the rest of the data. They may constitute possible outliers and we will look at them closer in the next section. 
+
+## Outliers {.tabset}
+
+Since there was an indication of outliers, we decided to detect them using quartiles. We made the following box plots:  
+```{r boxplots, echo=FALSE, message=FALSE}
+grid.arrange(
+  ggplot(data, aes(temp)) + geom_boxplot() + labs (x = "Temperature") + theme_bw(),
+  ggplot(data, aes(atemp)) + geom_boxplot() + labs (x = "Feeling temperature") + theme_bw(),
+  ggplot(data, aes(hum)) + geom_boxplot() + labs (x = "Humidity") + theme_bw(),
+  ggplot(data, aes(windspeed)) + geom_boxplot() + labs (x = "Wind speed") + theme_bw(),
+  ggplot(data, aes(cnt)) + geom_boxplot() + labs (x = "Bike rentals total") + theme_bw(),
+  ggplot(data, aes(casual)) + geom_boxplot() + labs (x = "Bike rentals casual") + theme_bw(),
+  ggplot(data, aes(registered)) + geom_boxplot() + labs (x = "Bike rentals subscribed") + theme_bw()
+)
+```
+
+The box plots further support our observations from earlier. Temperature and feeling temperature are distributed very normally and display no outliers on the box plots. Humidity has a a few `0` values that are flagged as outliers. In the wind speed, the large number of `0` values skews the distribution towards the smaller values, leaving a lot of the high wind speeds as outliers. The box plot of number of bike rentals reveals a large number of outliers in our outcome component variable. A similar pattern can be observed for the casual and registered bike rentals.
+
+We investigate the "problematic" variables: humidity, wind speed and number of rentals, further below:
+
+### Rental count outliers
 ```{r hour influence}
 data %>%
   group_by(hr) %>%
@@ -231,43 +256,7 @@ data %>%
 
 Looking at the above graph, the high occurrence of lower bike rentals (both registered and casual) is most likely caused by the night hours. Specifically, people barely rent bikes during the night.
 
-The weather phenomena histograms reveals that the 4th category, the harshest weather phenomena, is barely present. We will inspect this further when detecting possible outliers.
-
-The distribution of temperature and feeling temperature is quite normal. However, both humidity and wind speed have a number of `0` values that are disjointed from the rest of the data. They may constitute possible outliers and we will look at them closer in the next section. 
-
-## Outliers {.tabset}
-
-Since there was an indication of outliers, we decided to detect them using quantiles. We made the following box plots:  
-```{r boxplots, echo=FALSE, message=FALSE}
-grid.arrange(
-  ggplot(data, aes(temp)) + geom_boxplot() + labs (x = "Temperature") + theme_bw(),
-  ggplot(data, aes(atemp)) + geom_boxplot() + labs (x = "Feeling temperature") + theme_bw(),
-  ggplot(data, aes(hum)) + geom_boxplot() + labs (x = "Humidity") + theme_bw(),
-  ggplot(data, aes(windspeed)) + geom_boxplot() + labs (x = "Wind speed") + theme_bw(),
-  ggplot(data, aes(cnt)) + geom_boxplot() + labs (x = "Bike rentals total") + theme_bw(),
-  ggplot(data, aes(casual)) + geom_boxplot() + labs (x = "Bike rentals casual") + theme_bw(),
-  ggplot(data, aes(registered)) + geom_boxplot() + labs (x = "Bike rentals subscirbed") + theme_bw()
-)
-```
-
-The box plots further support our observations from earlier. Temperature and feeling temperature are distributed very normally and display no outliers on the box plots. Humidity has a a few `0` values that are flagged as outliers. In the wind speed, the large number of `0` values skews the distribution towards the smaller values, leaving a lot of the high wind speeds as outliers. The box plot of number of bike rentals reveals a large number of outliers in our outcome component variable. A similar pattern can be observed for the casual and registered bike rentals.
-
-We investigate the "problematic" variables: humidity, wind speed and number of rentals, further below:
-
-### Rental count outliers
-
-Since we suspect that a large amount of rentals' outliers is due to low rental count during the night, we decided to make separate histogram and boxplot graphs for the three day segments.  
-```{r distributions rental count, echo=FALSE, message=FALSE}
-ggplot(data, aes(cnt)) + geom_histogram() + labs (x = "Number of bike rentals",  title = "Distribution of bike rentals throughout the day segments")+ theme_bw()
-```
-
-In the histogram we see the drastically different night distribution to the other two day segments, with the frequency of small numbers of rentals dominating the entire data. However, all three distributions are quite positively-skewed even after the division  into the time segments. 
-
-```{r boxplots rental count, echo=FALSE, message=FALSE}
-ggplot(data, aes(cnt)) + geom_boxplot() + labs (x = "Number of bike rentals",  title = "Boxplot of bike rentals, seperated by the day segments")+ theme_bw()
-```
-
-The right-skewed distributions throughout the segments are visible in the boxplots. That is why dividing the boxplot according to the time segments still results in outliers at the tail-end of the values. However, the outlier values are quite reasonable. It is realistic for the rental company to be far more likely to receive  smaller number of rentals and not operating at their full capacity. Hence the outliers remain in the dataset.
+In the histogram we see the drastically different night distribution, with the frequency of small numbers of rentals dominating the entire data. However, the distribution of rental counts is quite positively-skewed. Therefore, the data points at the tail-end of the distribution will be marked as outliers within the boxplot. However, the outlier values are quite reasonable. It is realistic for the rental company to be far more likely to receive  smaller number of rentals and not operating at their full capacity. Hence the outliers remain in the dataset.
 
 ### Windspeed outliers
 
@@ -385,7 +374,7 @@ Due to the fact that `atemp` might be a correction of `temp` using potential lat
 ### Predictor effect on outcome {.tabset}
 
 #### Workingday
-Plotting the amount of success and failure occurrences per `workinday` category gives us insight into how the variable possibly affects our outcome. From the bar graph, we can conclude that the proportion of registered users compared to the total amount of users changes dramatically between weekends and workdays. In particular, the proportion of registered users sits below its respective average during the weekends, whilst the majority of observations during workdays have a registered proportion higher than its average.
+Plotting the amount of success and failure occurrences per `workinday` category gives us insight into how the variable possibly affects our outcome. From the bar graph, we can conclude that the proportion of registered users compared to the total amount of users changes dramatically between non-workingdays and workdays. In particular, the proportion of registered users sits below its respective average during non-workingdays, whilst the majority of observations during workdays have a registered proportion higher than its average.
 ```{r effect workingday}
 ggplot(data, aes(workingday)) +
   geom_bar(aes(fill = more_registered))
