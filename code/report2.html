@@ -4428,9 +4428,18 @@ here the diffrence is smaller.</p>
 </div>
 <div id="roc-curve" class="section level3">
 <h3>ROC curve</h3>
-<pre class="r"><code>#rocData &lt;- data %$% 
-#  pROC::roc(more_registered, piHat)
-#plot(rocData)</code></pre>
+<pre class="r"><code>rocData &lt;- data %&gt;% 
+  pROC::roc(more_registered, piHat)
+plot(rocData)</code></pre>
+<p><img src="data:image/png;base64,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" width="672" /></p>
+<p>The ROC curve depicts the idea is that Sensitivity and Specificity
+are always a trade off. The more you reject any data point as not a
+success the more likely you are to correctly reject it, however the
+likelihood of correctly classifying it as a success decreases. The shape
+of this curve suggests that our model is fairly balanced between the
+two, even though our Specificity is higher to Sensitivity. Generally,
+the closer the model is to the <span class="math inline">\((1,1)\)</span> corner the better the model is at
+classifing the data.</p>
 </div>
 </div>
 <div id="significance-of-predictors" class="section level2">
@@ -4450,8 +4459,8 @@ here the diffrence is smaller.</p>
 <p>As can be seen above all of the predictor slopes, interaction terms
 and the intercept are significantly different from 0.</p>
 </div>
-<div id="interpretation-of-coefficents-and-the-intercept" class="section level2">
-<h2>Interpretation of coefficents and the intercept</h2>
+<div id="interpretation-of-coefficents-and-the-intercept" class="section level2 tabset">
+<h2 class="tabset">Interpretation of coefficents and the intercept</h2>
 <p>To interpret the intercept and coefficients in more understandable
 units we convert them with an exponential function:</p>
 <pre class="r"><code># we transform the coefficients with the exponential function, so they can be interpreted as the odds ratio (not log of it)
@@ -4472,51 +4481,51 @@ variables have been standardized, which changes the interpretation of
 the intercept and of partial effects. Lastly, the reference categories
 for wheathersit and workingday are weathersit = 1 (lightest weather
 phenomena) and a non-working day accordingly.</p>
-<div id="intercept" class="section level4">
-<h4>Intercept</h4>
+<div id="intercept" class="section level3">
+<h3>Intercept</h3>
 <p>The intercept equals 0.302. Thus, the odds ratio of the proportion of
 registered rental bikes being higher than average to lower than average
 is equal to 0.302 when wheathersit is equal to 1 (lightest wheather
 phenomena), it is a non-workingday and humidity, temperature and
-windspeed are at their mean value</p>
+windspeed are at their mean valu.</p>
 </div>
-<div id="weekend-and-workingday" class="section level4">
-<h4>Weekend and workingday</h4>
+<div id="workingday" class="section level3">
+<h3>Workingday</h3>
 <p>The slope of workingday1 is equal to 8.356. Thus on a workingday the
 odds ratio of the proportion of registered rental bikes being higher
 than average to lower than average is increases by 8.356 compared to a
 non-working day; if windspeed, temperature and humidity are equal to
 their mean value and ‘wheathersit’ is equal to 1.</p>
 </div>
-<div id="windspeed" class="section level4">
-<h4>Windspeed</h4>
+<div id="windspeed" class="section level3">
+<h3>Windspeed</h3>
 <p>The slope of windspeed is equal to 3.277. This means that for a unit
 increase in windspeed the odds ratio of the proportion of registered
 rental bikes being higher than average to lower than average is on
-average higher by 8.356 if temperature and humidity are at their mean
-value and ‘workingday’ and ‘wheathersit’ are equal to their reference
-categories.</p>
+average higher by 8.356 if temperature and humidity are fixed and
+‘workingday’ and ‘wheathersit’ are equal to their reference categories
+(non-working day and 1, accordingly).</p>
 </div>
-<div id="temperature" class="section level4">
-<h4>Temperature</h4>
+<div id="temperature" class="section level3">
+<h3>Temperature</h3>
 <p>The temperature’s coefficient is equal to 0. This means that for a
 unit increase in temperature the odds ratio of the proportion of
 registered rental bikes being higher than average to lower than average
-changes on average by 0, if windspeed and humidity are at their mean
-value and ‘workingday’ and ‘wheathersit’ are equal to their reference
+changes on average by 0, if windspeed and humidity are fixed and
+‘workingday’ and ‘wheathersit’ are equal to their reference
 categories.</p>
 </div>
-<div id="humidity" class="section level4">
-<h4>Humidity</h4>
+<div id="humidity" class="section level3">
+<h3>Humidity</h3>
 <p>The humidity’s coefficient is equal to 2.465. This means that for a
 unit increase in humidity the odds ratio of the proportion of registered
 rental bikes being higher than average to lower than average is on
-average higher by 2.465; if windspeed and temperature are at their mean
-value and ‘workingday’ and ‘wheathersit’ are equal to their reference
+average higher by 2.465; if windspeed and temperature are fixed and
+‘workingday’ and ‘wheathersit’ are equal to their reference
 categories.</p>
 </div>
-<div id="weathersit" class="section level4">
-<h4>Weathersit</h4>
+<div id="weathersit" class="section level3">
+<h3>Weathersit</h3>
 <p>‘Weathersit’ represents the categorical variable that indicates the
 severity of weather phenomena. As a reminder, the final categories of
 <code>weathersit</code> represent the following weather phenomena and
@@ -4530,11 +4539,11 @@ Rain and Scattered clouds</li>
 </ol>
 <p>The coefficients of weathersit2 (-0.139) and weathersit3 (0.230)
 represent the average diffrence in odds ratio between the reference
-category (1) and categories 2 and 3 respectively, after controling for
+category (1) and categories 2 and 3 respectively, after controlling for
 windspeed, temperature, humidity and workingday.</p>
 </div>
-<div id="interaction-terms" class="section level4">
-<h4>Interaction terms</h4>
+<div id="interaction-terms" class="section level3">
+<h3>Interaction terms</h3>
 <p>The interaction terms <span class="math inline">\(\hat{\beta_7}\)</span>, <span class="math inline">\(\hat{\beta_8}\)</span> and <span class="math inline">\(\hat{\beta_9}\)</span> represent the moderation of
 weathersit on the effect of respectively windspeed, temperature and
 humidity on the odds ratio. Since they are significant that means that
@@ -4542,12 +4551,14 @@ the effect of these continuous variables is different on a working day
 as opposed to the ones we analyzed above on a non-working day. ?</p>
 <p>Thus, on a workingday a unit increase in windspeed leads to a 1.303
 (<span class="math inline">\(e^{\hat{\beta_2} + \hat{\beta_7}}\)</span>)
-change in the odds ratio, when</p>
-<p>For unit increase in temperature on a workingday the average odds
-ratio increases by 0.011 (<span class="math inline">\(e^{\hat{\beta_3} +
-\hat{\beta_8}}\)</span>)</p>
-<p>And lastly, for unit increase in humidity on a workingday the average
-odds ratio increases by 4.732 (<span class="math inline">\(e^{\hat{\beta_4} + \hat{\beta_9}}\)</span>)</p>
+change in the odds ratio, when controlling for humidity, temperature and
+weathersit equal to 1. For unit increase in temperature on a workingday
+the average odds ratio increases by 0.011 (<span class="math inline">\(e^{\hat{\beta_3} + \hat{\beta_8}}\)</span>), when
+controlling for humidity, windspeed and weathersit equal to 1. And
+lastly, for unit increase in humidity on a workingday the average odds
+ratio increases by 4.732 (<span class="math inline">\(e^{\hat{\beta_4} +
+\hat{\beta_9}}\)</span>), when controlling for temperature, windspeed
+and weathersit equal to 1.</p>
 </div>
 </div>
 <div id="answering-the-research-question" class="section level2">

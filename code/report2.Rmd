@@ -654,12 +654,13 @@ cMat$byClass
 
 
 ### ROC curve
-```{r}
-#rocData <- data %$% 
-#  pROC::roc(more_registered, piHat)
-#plot(rocData)
+```{r, message=FALSE}
+rocData <- data %>% 
+  pROC::roc(more_registered, piHat)
+plot(rocData)
 ```
 
+The ROC curve depicts the idea is that Sensitivity and Specificity are always a trade off. The more you reject any data point as not a success the more likely you are to correctly reject it, however the likelihood of correctly classifying it as a success decreases. The shape of this curve suggests that our model is fairly balanced between the two, even though our Specificity is higher to Sensitivity. Generally, the closer the model is to the $(1,1)$ corner the better the model is at classifing the data. 
 
 ## Significance of predictors
 ```{r coefficients_final_model}
@@ -668,7 +669,7 @@ summary(model6)$coefficients
 ```
 As can be seen above all of the predictor slopes, interaction terms and the intercept are significantly different from 0.
 
-## Interpretation of coefficents and the intercept
+## Interpretation of coefficents and the intercept {.tabset}
 
 To interpret the intercept and coefficients in more understandable units we convert them with an exponential function: 
 ```{r exp_coefficients}
@@ -678,31 +679,31 @@ coef(model6) %>% exp()
 
 It is important to note that the variables windspeed, temperature and humidity were standardized, thus a unit step in them is not expressed in any specific units (such as km/h) and a unit step increase represents a really big change in the variable value. Additionally, the continuous variables have been standardized, which changes the interpretation of the intercept and of partial effects. Lastly, the reference categories for wheathersit and workingday are weathersit = 1 (lightest weather phenomena) and a non-working day accordingly. 
 
-#### Intercept
-The intercept equals 0.302. Thus, the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is equal to 0.302 when wheathersit is equal to 1 (lightest wheather phenomena), it is a non-workingday and humidity, temperature and windspeed are at their mean value 
+### Intercept
+The intercept equals 0.302. Thus, the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is equal to 0.302 when wheathersit is equal to 1 (lightest wheather phenomena), it is a non-workingday and humidity, temperature and windspeed are at their mean valu. 
 
-#### Weekend and workingday
+### Workingday
 The slope of workingday1 is equal to 8.356. Thus on a workingday the odds ratio of  the proportion of registered rental bikes being higher than average to lower than average is increases by 8.356 compared to a non-working day; if windspeed, temperature and humidity are equal to their mean value and 'wheathersit' is equal to 1.  
 
-#### Windspeed
-The slope of windspeed is equal to 3.277. This means that for a unit increase in windspeed the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is on average higher by 8.356 if temperature and humidity are at their mean value and 'workingday' and 'wheathersit' are equal to their reference categories. 
+### Windspeed
+The slope of windspeed is equal to 3.277. This means that for a unit increase in windspeed the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is on average higher by 8.356 if temperature and humidity are fixed and 'workingday' and 'wheathersit' are equal to their reference categories (non-working day and 1, accordingly). 
 
-#### Temperature
-The temperature's coefficient is equal to `r round( 3.263983e-04, digits = 3)`. This means that for a unit increase in temperature the odds ratio of the proportion of registered rental bikes being higher than average to lower than average changes on average by `r round( 3.263983e-04, digits = 3)`, if windspeed and humidity are at their mean value and 'workingday' and 'wheathersit' are equal to their reference categories. 
+### Temperature
+The temperature's coefficient is equal to `r round( 3.263983e-04, digits = 3)`. This means that for a unit increase in temperature the odds ratio of the proportion of registered rental bikes being higher than average to lower than average changes on average by `r round( 3.263983e-04, digits = 3)`, if windspeed and humidity are fixed and 'workingday' and 'wheathersit' are equal to their reference categories. 
 
-#### Humidity 
-The humidity's coefficient is equal to 2.465. This means that for a unit increase in humidity the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is on average higher by 2.465; if windspeed and temperature are at their mean value and 'workingday' and 'wheathersit' are equal to their reference categories. 
+### Humidity 
+The humidity's coefficient is equal to 2.465. This means that for a unit increase in humidity the odds ratio of the proportion of registered rental bikes being higher than average to lower than average is on average higher by 2.465; if windspeed and temperature are fixed and 'workingday' and 'wheathersit' are equal to their reference categories. 
 
-#### Weathersit
+### Weathersit
 'Weathersit' represents the categorical variable that indicates the severity of weather phenomena. As a reminder, the final categories of `weathersit` represent the following weather phenomena and their combinations:
 
 1.    Clear, Few clouds, Partly cloudy, Partly cloudy
 2.    Mist and Cloudy, Mist and Broken clouds, Mist and Few clouds, Mist
 3.    Light Snow, Light Rain and Thunderstorm and Scattered clouds, Light Rain and Scattered clouds
 
-The coefficients of weathersit2 (-0.139) and weathersit3 (0.230) represent the average diffrence in odds ratio between the reference  category (1) and categories 2 and 3 respectively, after controling for windspeed, temperature, humidity and workingday. 
+The coefficients of weathersit2 (-0.139) and weathersit3 (0.230) represent the average diffrence in odds ratio between the reference  category (1) and categories 2 and 3 respectively, after controlling for windspeed, temperature, humidity and workingday.  
 
-#### Interaction terms
+### Interaction terms
 
 The interaction terms $\hat{\beta_7}$, $\hat{\beta_8}$ and $\hat{\beta_9}$ represent the moderation of weathersit on the effect of respectively windspeed, temperature and humidity on the odds ratio. Since they are significant that means that the effect of these continuous variables is different on a working day as opposed to the ones we analyzed above on a non-working day. 
 ?
@@ -712,12 +713,7 @@ coefftemp <-  3.263983e-04 * 3.490583e+01
 coeffhum <- 1.175950e+01 * 4.024118e-01
 ```
 
-Thus, on a workingday a unit increase in windspeed leads to a `r round(coeffwind, digits = 3)` ($e^{\hat{\beta_2} + \hat{\beta_7}}$) change in the odds ratio, when 
-
-
-For unit increase in temperature on a workingday the average odds ratio increases by `r round(coefftemp, digits = 3)` ($e^{\hat{\beta_3} + \hat{\beta_8}}$)
-
-And lastly, for unit increase in humidity on a workingday the average odds ratio increases by `r round(coeffhum, digits = 3)` ($e^{\hat{\beta_4} + \hat{\beta_9}}$)
+Thus, on a workingday a unit increase in windspeed leads to a `r round(coeffwind, digits = 3)` ($e^{\hat{\beta_2} + \hat{\beta_7}}$) change in the odds ratio, when controlling for humidity, temperature and weathersit equal to 1. For unit increase in temperature on a workingday the average odds ratio increases by `r round(coefftemp, digits = 3)` ($e^{\hat{\beta_3} + \hat{\beta_8}}$), when controlling for humidity, windspeed and weathersit equal to 1. And lastly, for unit increase in humidity on a workingday the average odds ratio increases by `r round(coeffhum, digits = 3)` ($e^{\hat{\beta_4} + \hat{\beta_9}}$), when controlling for temperature, windspeed and weathersit equal to 1.
 
 ## Answering the research question
 
