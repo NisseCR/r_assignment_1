@@ -50,6 +50,7 @@ library(lubridate)
 library(car)
 library(ICC)
 library(caret)
+library(pROC)
 ```
 
 ```{r read data  files}
@@ -653,6 +654,11 @@ cMat$byClass
 
 
 ### ROC curve
+```{r}
+#rocData <- data %$% 
+#  pROC::roc(more_registered, piHat)
+#plot(rocData)
+```
 
 
 ## Significance of predictors

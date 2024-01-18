@@ -11,7 +11,7 @@
 
 <meta name="author" content="Aga, Karla, Nisse, Ole" />
 
-<meta name="date" content="2024-01-17" />
+<meta name="date" content="2024-01-18" />
 
 <title>Bike Sharing</title>
 
@@ -3004,7 +3004,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Bike Sharing</h1>
 <h4 class="author">Aga, Karla, Nisse, Ole</h4>
-<h4 class="date">2024-01-17</h4>
+<h4 class="date">2024-01-18</h4>
 
 </div>
 
@@ -3076,7 +3076,8 @@ library(gridExtra, exclude=&quot;combine&quot;)
 library(lubridate)
 library(car)
 library(ICC)
-library(caret)</code></pre>
+library(caret)
+library(pROC)</code></pre>
 <pre class="r"><code># Source hourly data for model
 source_data &lt;- read.csv(&quot;../data/hour.csv&quot;, header = TRUE, sep = &quot;,&quot;) %&gt;%
   as_tibble()
@@ -4427,6 +4428,9 @@ here the diffrence is smaller.</p>
 </div>
 <div id="roc-curve" class="section level3">
 <h3>ROC curve</h3>
+<pre class="r"><code>#rocData &lt;- data %$% 
+#  pROC::roc(more_registered, piHat)
+#plot(rocData)</code></pre>
 </div>
 </div>
 <div id="significance-of-predictors" class="section level2">
